@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<launch>
+
+    <include file="~/jetauto_ws/src/jetauto_driver/hiwonder_servo/hiwonder_servo_controllers/launch/start.launch"/>
+
+    <!-- <node name="Camera" pkg="JetAuto2" type="camera.py"/> -->
+    <!-- <node name="Classificator" pkg="JetAuto2" type="imageClassificator.py"/> -->
+    <node name="Controller" pkg="JetAuto2" type="armMovement.py"/>
+
+</launch>
