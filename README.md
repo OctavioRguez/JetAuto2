@@ -23,26 +23,23 @@ The project is primarily written in Python. The following Python libraries are u
 ROS uses a message-passing architecture, so the project also uses default message definitions.
 The following messages are used in the project:
 
-- `sensor_msgs/Image`: A message type for publishing images from a camera.
-- `geometry_msgs/Point`: A message type for publishing detected object coordinates.
 - `std_msgs/String`: A message type for publishing object classification results.
-- `std_msgs/Float64`: A message type for publishing a Joint angle of the Robotic Arm.
+- `geometry_msgs/Point`: A message type for publishing detected object coordinates.
+- `sensor_msgs/Image`: A message type for publishing images from a camera.
+- `sensor_msgs/LaserScan`: A message type for publishing Lidar Scan data.
+- `nav_msgs/OccupancyGrid`: A message type for publishing the SLAM map data.
+- `hiwonder_servo_msgs/CommandDuration`: A message type for publishing a Joint angle and duration of the movement, for the Robotic Arm.
 
 ## Scripts
 
-The scripts are divided in 2 folders, the `classes/` are used and imported in the scripts inside the `nodes/` folder.
+The following ROS nodes are included in the project:
 
-The following scripts are included in the project:
+- `armMovement.py`: A Python script for controlling the robotic arm movement.
+- `objectClassificator.py`: A Python script for subscribing to a camera image and classifying objects.
 
-- `classes/`: A folder containing the following Python classes:
-    - `camera.py`: A Python script defining the Camera class.
-    - `inverseKinematics.py`: A Python script defining the InverseKinematics class.
-    - `modelPredict.py`: A Python script defining the ModelPredict class.
-
-- `nodes/`: A folder containing the following Python nodes:
-    - `armMovement.py`: A Python script for controlling the robotic arm movement.
-    - `cameraImage.py`: A Python script for publishing a camera image.
-    - `objectClassificator.py`: A Python script for subscribing to a camera image and classifying objects.
+The `Classes/` folder contains the following Python classes that are used and imported in the ROS nodes:
+- `inverseKinematics.py`: A Python script defining the InverseKinematics class.
+- `modelPredict.py`: A Python script defining the ModelPredict class.
 
 ## Launch
 

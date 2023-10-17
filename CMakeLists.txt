@@ -8,11 +8,13 @@ project(JetAuto2)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  rospy
   cv_bridge
   geometry_msgs
-  rospy
   sensor_msgs
   std_msgs
+  hiwonder_servo_msgs
+  nav_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -162,9 +164,8 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
-  scripts/Nodes/armMovement.py
-  scripts/Nodes/cameraImage.py
-  scripts/Nodes/objectClassificator.py
+  scripts/armMovement.py
+  scripts/objectClassificator.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

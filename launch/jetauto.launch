@@ -1,10 +1,14 @@
 <?xml version="1.0" ?>
 <launch>
 
-    <include file="~/jetauto_ws/src/jetauto_driver/hiwonder_servo/hiwonder_servo_controllers/launch/start.launch"/>
+    <!-- Servo Controller Launch -->
+    <!-- <include file="$(find hiwonder_servo_controllers)/launch/start.launch"></include> -->
 
-    <!-- <node name="Camera" pkg="JetAuto2" type="camera.py"/> -->
-    <!-- <node name="Classificator" pkg="JetAuto2" type="imageClassificator.py"/> -->
-    <node name="Controller" pkg="JetAuto2" type="armMovement.py"/>
+    <!-- Camera Launch -->
+    <include file="$(find jetauto_peripherals)/launch/usb_cam.launch"></include>
+
+    <!-- Nodes -->
+    <node name="Classificator" pkg="JetAuto2" type="objectClassificator.py"/>
+    <!-- <node name="ArmController" pkg="JetAuto2" type="armMovement.py"/> -->
 
 </launch>

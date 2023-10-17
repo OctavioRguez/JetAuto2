@@ -18,13 +18,27 @@ class inverseKinematics:
         s = np.sqrt(Pwx**2 + Pwy**2)
         D = (s**2 - self.__l["l2"]**2 - self.__l["l3"]**2)/(2*self.__l["l2"]*self.__l["l3"])
         
-        self.__q["q1"] = np.arctan2(x, y)
+        self.__q["q1"] = np.arctan2(y, x)
         self.__q["q3"] = np.arctan2(np.sqrt(1 - D**2), D)
 
-        sigma = np.arctan2(self.__l["l3"]*np.sin(self.__q["q3"]), self.__l["l2"] + self.__l["l3"]*np.cos(self.__q["q3"]))
-        self.__q["q2"] = alpha - sigma
-        self.__q["q4"] = - (self.__q["q2"] + self.__q["q3"])
+        gamma = np.arctan2(self.__l["l3"]*np.sin(self.__q["q3"]), self.__l["l2"] + self.__l["l3"]*np.cos(self.__q["q3"]))
+        self.__q["q2"] = alpha - gamma
+        self.__q["q4"] = -(self.__q["q2"] + self.__q["q3"])
+
+    def _start(self) -> list:
+        self.__q["q1"] = 0.0
+        self.__q["q2"] = 7*np.pi/8
+        self.__q["q3"] = -np.pi/6
+        self.__q["q4"] = 3*np.pi/4
+        return list(self.__q.values())
+
+    def _reset(self) -> list:
+        self.__q["q1"] = 0.0
+        self.__q["q2"] = -np.pi/4
+        self.__q["q3"] = 5*np.pi/8
+        self.__q["q4"] = np.pi/4
+        return list(self.__q.values())
 
     # Public function for getting the joints
     def getJoints(self) -> list:
-        return self.__q.values()
+        return list(self.__q.values())

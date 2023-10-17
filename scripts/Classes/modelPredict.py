@@ -4,7 +4,7 @@ import numpy as np
 
 class modelPredict:
     # Variables
-    def __init__(self, model:str, class_list:list, colors:list[tuple]) -> None:
+    def __init__(self, model:str, class_list:list, colors:list) -> None:
         self.__width = 640
         self.__height = 640
 
@@ -12,7 +12,7 @@ class modelPredict:
         self.__class_list = class_list
         self.__colors = colors
         
-        self.__coords = [0, 0, 0]
+        self.__y = 0.0
 
     def __buildModel(self, is_cuda:bool) -> cv.dnn_Net:
         net = cv.dnn.readNet(self.__model)
@@ -77,7 +77,7 @@ class modelPredict:
     def __format_yolov5(self, img:cv.Mat) -> cv.Mat:
         return cv.resize(img, [640, 640], interpolation = cv.INTER_AREA)
 
-    def _startDetection(self, object:str, img:cv.Mat, dim:list) -> None:
+    def _startDetection(self, object:str, img:cv.Mat, width:float) -> None:
         net = self.__buildModel(True) # Define if opencv runs with CUDA or CPU (False = CPU, True = CUDA)
         formatImg = self.__format_yolov5(img)
         outs = self.__detect(formatImg, net)
@@ -91,13 +91,10 @@ class modelPredict:
                 cv.putText(formatImg, self.__class_list[classid], (box[0], box[1] - 10), cv.FONT_HERSHEY_SIMPLEX, .5, (0,0,0))
 
                 # Calculate pixels to meters ratio
-                PixToMeters_z = dim[0] / box[2]
-                PixToMeters_y = dim[1] / box[3]
-                x = 0.3
-                y = box[0] + box[2] / 2
-                z = box[1] + box[3] / 2
-                self.__coords = [x, y*PixToMeters_y, z*PixToMeters_z]
+                PixToMeters = width / box[2]
+                self.__y = ((box[0] + box[2] / 2) - self.__width/2)*PixToMeters
         cv.imshow('Classificator', formatImg)
+        cv.waitKey(1)
 
-    def getCoords(self) -> list:
-        return self.__coords
+    def getY(self) -> float:
+        return self.__y
