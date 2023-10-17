@@ -15,7 +15,7 @@ class modelPredict:
         self.__y = 0.0
 
     def __buildModel(self, is_cuda:bool) -> cv.dnn_Net:
-        net = cv.dnn.readNet(self.__model)
+        net = cv.dnn.readNetFromONNX(self.__model)
         if is_cuda:
             print("Attempting to use CUDA")
             net.setPreferableBackend(cv.dnn.DNN_BACKEND_CUDA)

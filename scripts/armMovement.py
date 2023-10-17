@@ -32,7 +32,7 @@ if __name__ == '__main__':
     hz = 10 # Frequency (Hz)
     rate = rospy.Rate(hz)
 
-    ik = inverseKinematics(0.03, 0.12, 0.13, 0.05) # Inverse Kinematics class object
+    ik = inverseKinematics(0.03, 0.13, 0.13, 0.05) # Inverse Kinematics class object
 
     # Initialize the subscribers and publishers
     rospy.Subscriber("/object/coords", Point, coordsCallback)
@@ -52,4 +52,3 @@ if __name__ == '__main__':
             rate.sleep()
         except rospy.ROSInterruptException as ie:
             rospy.loginfo(ie) # Catch an Interruption
-            pass

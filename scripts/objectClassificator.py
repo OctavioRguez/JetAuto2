@@ -40,16 +40,16 @@ if __name__ == '__main__':
 
     print("The Classificator is Running")
     rospy.on_shutdown(stop)
+    width, height= 0.05, 0.1
 
     # Run the node
     while not rospy.is_shutdown():
         try:
             if (img is not None) and (object is not None):
-                model._startDetection(object, img, 0.1)
-                coord_pub.publish(0.2, model.getY(), -0.1)
+                model._startDetection(object, img, width)
+                coord_pub.publish(0.25, model.getY(), -0.17 + height/2)
         except rospy.ROSInterruptException as ie:
             rospy.loginfo(ie) # Catch an Interruption
-            pass
         
         rate.sleep()
     
