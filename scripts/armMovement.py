@@ -36,13 +36,14 @@ if __name__ == '__main__':
 
     # Initialize the subscribers and publishers
     rospy.Subscriber("/object/coords", Point, coordsCallback)
-    joint1_pub = rospy.Publisher('/joint1_controller/command_duration', CommandDuration, queue_size = 10)
-    joint2_pub = rospy.Publisher('/joint2_controller/command_duration', CommandDuration, queue_size = 10)
-    joint3_pub = rospy.Publisher('/joint3_controller/command_duration', CommandDuration, queue_size = 10)
-    joint4_pub = rospy.Publisher('/joint4_controller/command_duration', CommandDuration, queue_size = 10)
+    joint1_pub = rospy.Publisher('/joint1_controller/command_duration', CommandDuration, queue_size = 1)
+    joint2_pub = rospy.Publisher('/joint2_controller/command_duration', CommandDuration, queue_size = 1)
+    joint3_pub = rospy.Publisher('/joint3_controller/command_duration', CommandDuration, queue_size = 1)
+    joint4_pub = rospy.Publisher('/joint4_controller/command_duration', CommandDuration, queue_size = 1)
 
+    rospy.sleep(2.0)
     joints = ik._start() # Start the robotic arm
-    jointsPublish(joints, 2500.0)
+    jointsPublish(joints, 2000.0)
     print("The Arm Movement node is Running")
     rospy.on_shutdown(stop)
 

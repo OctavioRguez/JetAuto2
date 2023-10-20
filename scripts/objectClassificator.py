@@ -31,7 +31,9 @@ if __name__ == '__main__':
     rate = rospy.Rate(hz)
 
     # Classificator class object
-    model = modelPredict("../Model/bestV4-40e.onnx", ["Fanta", "Pepsi", "Seven"], [(255, 0, 0), (0, 255, 0), (0, 0, 255)])
+    classes = ["Fanta", "Pepsi", "Seven"]
+    colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
+    model = modelPredict("../Model/bestV4-40e.onnx", classes, colors, 640, 0.6, True)
 
     # Publishers and subscribers
     rospy.Subscriber("/video_source/raw", Image, imageCallback) # Get the image from the camera
@@ -46,7 +48,7 @@ if __name__ == '__main__':
     while not rospy.is_shutdown():
         try:
             if (img is not None) and (object is not None):
-                model._startDetection(object, img, width)
+                model._startDetection(img, object, width)
                 coord_pub.publish(0.25, model.getY(), -0.17 + height/2)
         except rospy.ROSInterruptException as ie:
             rospy.loginfo(ie) # Catch an Interruption

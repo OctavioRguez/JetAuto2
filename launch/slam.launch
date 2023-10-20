@@ -1,6 +1,5 @@
 <?xml version="1.0" ?>
 <launch>
-
     <!-- Lidar Launch -->
     <include file="$(find jetauto_peripherals)/launch/lidar.launch"></include>
 
@@ -16,6 +15,5 @@
     </node>
 
     <!-- Teleoperation - keyboard control -->
-    <node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="teleop_twist_keyboard" output="screen"/>
-
+    <node name="KeyboardController" pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py"/>
 </launch>

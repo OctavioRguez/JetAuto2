@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<launch>
+    <!-- Servo Controller Launch -->
+    <include file="$(find hiwonder_servo_controllers)/launch/start.launch"></include>
+
+    <!-- Nodes -->
+    <node name="ArmController" pkg="JetAuto2" type="armMovement.py"/>
+</launch>

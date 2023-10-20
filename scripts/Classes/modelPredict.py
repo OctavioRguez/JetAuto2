@@ -3,98 +3,87 @@ import cv2 as cv
 import numpy as np
 
 class modelPredict:
-    # Variables
-    def __init__(self, model:str, class_list:list, colors:list) -> None:
-        self.__width = 640
-        self.__height = 640
-
+    # Attributes
+    def __init__(self, model:str, class_list:list, colors:list, imgSz:int, conf_thres:float, cuda:bool) -> None:
         self.__model = model
         self.__class_list = class_list
         self.__colors = colors
-        
+        self.__imgSize = imgSz
+        self.__conf = conf_thres
+        self.__buildModel(cuda)
+
         self.__y = 0.0
 
-    def __buildModel(self, is_cuda:bool) -> cv.dnn_Net:
-        net = cv.dnn.readNetFromONNX(self.__model)
+    # Define if opencv runs with CUDA or CPU (False = CPU, True = CUDA)
+    def __buildModel(self, is_cuda:bool) -> None:
+        self.__net = cv.dnn.readNetFromONNX(self.__model)
         if is_cuda:
             print("Attempting to use CUDA")
-            net.setPreferableBackend(cv.dnn.DNN_BACKEND_CUDA)
-            net.setPreferableTarget(cv.dnn.DNN_TARGET_CUDA_FP16)
+            self.__net.setPreferableBackend(cv.dnn.DNN_BACKEND_CUDA)
+            self.__net.setPreferableTarget(cv.dnn.DNN_TARGET_CUDA_FP16)
         else:
             print("Running on CPU")
-            net.setPreferableBackend(cv.dnn.DNN_BACKEND_OPENCV)
-            net.setPreferableTarget(cv.dnn.DNN_TARGET_CPU)
-        return net
+            self.__net.setPreferableBackend(cv.dnn.DNN_BACKEND_OPENCV)
+            self.__net.setPreferableTarget(cv.dnn.DNN_TARGET_CPU)
     
-    def __detect(self, image:cv.Mat, net:cv.dnn_Net) -> np.ndarray:
-        blob = cv.dnn.blobFromImage(image, 1/255.0, (self.__width, self.__height), swapRB=True, crop=False)
-        net.setInput(blob)
-        preds = net.forward()
+    # Format image to be used by the model
+    def __formatYolov5(self, img:cv.Mat) -> cv.Mat:
+        return cv.resize(img, [self.__imgSize, self.__imgSize], interpolation = cv.INTER_AREA)
+
+    # Detect objects in the image
+    def __detect(self, img:cv.Mat) -> np.ndarray:
+        blob = cv.dnn.blobFromImage(img, 1/255.0, (self.__imgSize, self.__imgSize), swapRB=True, crop=False)
+        self.__net.setInput(blob)
+        preds = self.__net.forward(self.__net.getUnconnectedOutLayersNames())
         return preds
 
-    def __wrap_detection(self, image:cv.Mat, output:np.ndarray) -> tuple:
-        class_ids, confidences, boxes = [], [], []
+    # Wrap the detection process
+    def __wrapDetection(self, modelOutput:np.ndarray, object:str) -> tuple:
+        class_ids, boxes = [], []
 
-        rows = output.shape[0]
-        image_width, image_height = image.shape[:2]
-
-        x_factor = image_width / self.__width
-        y_factor =  image_height / self.__height
-
+        rows = modelOutput[0].shape[1]
         for r in range(rows):
-            row = output[r]
+            row = modelOutput[0][r]
             confidence = row[4]
 
-            if confidence > 0.5:
+            # Filer the detections
+            if confidence > self.__conf:
                 classes_scores = row[5:]
-                max_indx = cv.minMaxLoc(classes_scores)[3]
-                class_id = max_indx[1]
+                class_id = cv.minMaxLoc(classes_scores)[3][1]
 
-                if (classes_scores[class_id] > 0.25):
-                    confidences.append(confidence)
+                if (self.__class_list[class_id] == object) and (classes_scores[class_id] > self.__conf):
                     class_ids.append(class_id)
                     x, y, w, h = row[0].item(), row[1].item(), row[2].item(), row[3].item() 
-                    left = int((x - 0.5 * w) * x_factor)
-                    top = int((y - 0.5 * h) * y_factor)
-                    width = int(w * x_factor)
-                    height = int(h * y_factor)
+                    left = int((x - 0.5 * w))
+                    top = int((y - 0.5 * h))
+                    width, height = int(w), int(h)
                     box = np.array([left, top, width, height])
                     boxes.append(box)
 
-        indexes = cv.dnn.NMSBoxes(boxes, confidences, 0.25, 0.45) 
-
-        result_class_ids = []
-        result_confidences = []
-        result_boxes = []
-
-        for i in indexes:
-            result_confidences.append(confidences[i])
+        result_class_ids, result_boxes = [], []
+        for i in range(len(boxes)):
             result_class_ids.append(class_ids[i])
             result_boxes.append(boxes[i])
+        return result_class_ids, result_boxes
 
-        return result_class_ids, result_confidences, result_boxes
-
-    def __format_yolov5(self, img:cv.Mat) -> cv.Mat:
-        return cv.resize(img, [640, 640], interpolation = cv.INTER_AREA)
-
-    def _startDetection(self, object:str, img:cv.Mat, width:float) -> None:
-        net = self.__buildModel(True) # Define if opencv runs with CUDA or CPU (False = CPU, True = CUDA)
-        formatImg = self.__format_yolov5(img)
-        outs = self.__detect(formatImg, net)
-        class_ids, confidences, boxes = self.__wrap_detection(formatImg, outs[0])
+    # Start the detection process
+    def _startDetection(self, img:cv.Mat, object:str, width:float) -> None:
+        formatImg = self.__formatYolov5(img)
+        outs = self.__detect(formatImg)
+        class_ids, boxes = self.__wrapDetection(outs[0], object)
         
-        for (classid, confidence, box) in zip(class_ids, confidences, boxes):
-            if object == self.__class_list[classid]:
-                color = self.__colors[int(classid) % len(self.__colors)]
-                cv.rectangle(formatImg, box, color, 2)
-                cv.rectangle(formatImg, (box[0], box[1] - 20), (box[0] + box[2], box[1]), color, -1)
-                cv.putText(formatImg, self.__class_list[classid], (box[0], box[1] - 10), cv.FONT_HERSHEY_SIMPLEX, .5, (0,0,0))
+        for (classid, box) in zip(class_ids, boxes):
+            color = self.__colors[int(classid) % len(self.__colors)]
+            cv.rectangle(formatImg, box, color, 2)
+            cv.rectangle(formatImg, (box[0], box[1] - 20), (box[0] + box[2], box[1]), color, -1)
+            cv.putText(formatImg, object, (box[0], box[1] - 10), cv.FONT_HERSHEY_SIMPLEX, .5, (0,0,0))
 
-                # Calculate pixels to meters ratio
-                PixToMeters = width / box[2]
-                self.__y = ((box[0] + box[2] / 2) - self.__width/2)*PixToMeters
+            # Calculate pixels to meters ratio
+            PixToMeters = width / box[2]
+            self.__y = PixToMeters*(box[0] + box[2] - self.__imgSize)/2
         cv.imshow('Classificator', formatImg)
         cv.waitKey(1)
 
+    # Get the Y coordinate of the object
     def getY(self) -> float:
         return self.__y
