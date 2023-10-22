@@ -6,52 +6,69 @@ from geometry_msgs.msg import Point
 from sensor_msgs.msg import Image
 from Classes.modelPredict import modelPredict
 
-img, object = None, None
+class objectClassificator:
+    def __init__(self, model:str, classes:list, colors:list, imgSize:float, conf_threshold:float, cuda:bool) -> None:
+        # Instance of the class modelPredict
+        self.__model = modelPredict(model, classes, colors, imgSize, conf_threshold, cuda)
 
-def imageCallback(msg) -> None:
-    try:
-        global img
-        img = cv_bridge.CvBridge().imgmsg_to_cv(msg, desired_encoding = 'passthrough') # Conversion from imgmsg to cv
-    except cv_bridge.CvBridgeError as e:
-        rospy.loginfo(e) # Catch an error
+        # Initialize the variables
+        self.__img = None
+        self.__object = None # Desired Class name of the object
+        self.__objWidth, self.__objHeight = 0.05, 0.1 # Object dimensions (m)
 
-def classCallback(msg) -> None:
-    global object
-    object = msg.data
+        # Initialize the subscribers and publishers
+        rospy.Subscriber("/video_source/raw", Image, self.__imageCallback) # Get the image from the camera
+        rospy.Subscriber("/object/class", String, self.__classCallback) # Get the class of the object
+        self.__coord_pub = rospy.Publisher("/object/coords", Point, queue_size = 1) # Publish the coordinates of the object (m)
 
-# Stop Condition
-def stop() -> None:
-    print("Stopping") # Stop message
+    # Callback funtion for the image
+    def __imageCallback(self, msg:Image) -> None:
+        try:
+            self.__img = cv_bridge.CvBridge().imgmsg_to_cv(msg, desired_encoding = 'passthrough') # Conversion from imgmsg to cv
+        except cv_bridge.CvBridgeError as e:
+            rospy.loginfo(e) # Catch an error
+
+    # Callback function for the class name
+    def __classCallback(self, msg:String) -> None:
+        self.__object = msg.data
+
+    # Start the model classification
+    def _startModel(self) -> None:
+        if (self.__img is not None) and (self.__object is not None):
+            self.__model._startDetection(self.__img, self.__object, self.__objWidth) # Detect on current frame
+            self.__coord_pub.publish(0.2, self.__model.getY(), -0.17 + self.__objHeight/2)
+
+    # Stop Condition
+    def _stop(self) -> None:
+        print("Stopping classificator node")
 
 if __name__ == '__main__':
     # Initialise and Setup node
     rospy.init_node("Classificator")
 
-    hz = 10 # Frequency (Hz)
-    rate = rospy.Rate(hz)
+    # Initialize the rate
+    rate = rospy.Rate(rospy.get_param("rate", default = 100))
 
-    # Classificator class object
-    classes = ["Fanta", "Pepsi", "Seven"]
+    # Get the parameters
+    model = rospy.get_param("model/path", default = "../Model/bestV5-20e.onnx")
+    class_list = rospy.get_param("classes/list", default = ["Fanta", "Pepsi", "Seven"])
+    imgSize = rospy.get_param("imageSize/value", default = 640)
+    conf = rospy.get_param("confidence/value", default = 0.5)
+    cuda = rospy.get_param("isCuda/value", default = True)
+
+    # Create the instance of the class
     colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
-    model = modelPredict("../Model/bestV4-40e.onnx", classes, colors, 640, 0.6, True)
+    classificator = objectClassificator(model, class_list, colors, imgSize, conf, cuda)
 
-    # Publishers and subscribers
-    rospy.Subscriber("/video_source/raw", Image, imageCallback) # Get the image from the camera
-    rospy.Subscriber("/object/class", String, classCallback) # Get the class of the object
-    coord_pub = rospy.Publisher("/object/coords", Point, queue_size = 1)
-
-    print("The Classificator is Running")
-    rospy.on_shutdown(stop)
-    width, height= 0.05, 0.1
+    # Shutdown hook
+    rospy.on_shutdown(classificator._stop)
 
     # Run the node
+    print("The Classificator is Running")
     while not rospy.is_shutdown():
         try:
-            if (img is not None) and (object is not None):
-                model._startDetection(img, object, width)
-                coord_pub.publish(0.25, model.getY(), -0.17 + height/2)
+            classificator._startModel()
         except rospy.ROSInterruptException as ie:
             rospy.loginfo(ie) # Catch an Interruption
         
         rate.sleep()
-    

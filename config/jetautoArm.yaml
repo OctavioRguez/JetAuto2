@@ -1,0 +1,15 @@
+rate: 100
+vel: 0.8
+links:
+  link1:
+    name: link_1
+    lenght: 0.03
+  link2:
+    name: link_2
+    lenght: 0.133
+  link3:
+    name: link_3
+    lenght: 0.13
+  link4:
+    name: link_4
+    lenght: 0.05

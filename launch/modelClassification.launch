@@ -1,5 +1,8 @@
 <?xml version="1.0" ?>
 <launch>
+    <!-- Parameter file -->
+    <rosparam file="./config/jetautoClassification.yaml" />
+
     <!-- Camera Launch -->
     <include file="$(find jetauto_peripherals)/launch/usb_cam.launch"></include>
 

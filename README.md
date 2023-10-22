@@ -6,6 +6,7 @@ JetAuto2 is a ROS (Robot Operating System) project for controlling the Hiwonder 
 
 The project is structured as follows:
 
+- `config/`: Contains yaml files with parameters for the nodes.
 - `scripts/`: Contains scripts for running the project.
 - `launch/`: Contains launch files for starting the project.
 - `Model/`: Contains the yolov5 models for detect and classificate.
@@ -38,7 +39,7 @@ The following ROS nodes are included in the project:
 - `objectClassificator.py`: A Python script for subscribing to a camera image and classifying objects.
 
 The `Classes/` folder contains the following Python classes that are used and imported in the ROS nodes:
-- `inverseKinematics.py`: A Python script defining the InverseKinematics class.
+- `robotArm.py`: A Python script defining the robotArm class.
 - `modelPredict.py`: A Python script defining the ModelPredict class.
 
 ## Launch

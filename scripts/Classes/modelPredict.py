@@ -3,7 +3,6 @@ import cv2 as cv
 import numpy as np
 
 class modelPredict:
-    # Attributes
     def __init__(self, model:str, class_list:list, colors:list, imgSz:int, conf_thres:float, cuda:bool) -> None:
         self.__model = model
         self.__class_list = class_list
