@@ -4,13 +4,18 @@
     <include file="$(find jetauto_peripherals)/launch/lidar.launch"></include>
 
     <!-- Odometry Launch -->
-    <include file="$(find jetauto_controller)/launch/odom.launch"></include>
+    <include file="$(find jetauto_controller)/launch/odom_publish.launch"></include>
 
     <!-- SLAM Package-->
     <node pkg="gmapping" type="slam_gmapping" name="gmapping">
-        <param name="base_frame"            value="base_link"/>
+        <!-- <param name="frequency"             value="10.0"/> -->
+        <param name="base_frame"            value="base_footprint"/>
         <param name="odom_frame"            value="odom" />
-        <param name="map_update_interval"   value="3.0"/>
+        <param name="map_frame"             value="map" />
+        <param name="map_update_interval"   value="1.0"/>
         <param name="maxUrange"             value="1.0"/>
+        <param name="maxRange"              value="2.0"/>
+        <param name="particles"             value="50"/>
+        <param name="delta"                 value="0.025"/>
     </node>
 </launch>

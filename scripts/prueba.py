@@ -9,21 +9,18 @@ def stop() -> None:
 
 if __name__ == '__main__':
     # Classificator class object
-    classes = ["Fanta", "Pepsi", "Seven"]
-    colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
-    model = modelPredict("../Model/bestV5-20e.onnx", classes, colors, 640, 0.6, True)
-
+    model = modelPredict("../Model/bestV5-25e.onnx", ["Fanta", "Pepsi", "Seven"], 0.6, False)
     cap = cv.VideoCapture(0)
-
     while True:
         try:
             if cap.isOpened():
                 ret, frame = cap.read() # Get actual frame
                 if not ret:
                     print("Unable to obtain current frame")
+                elif frame.size > 0:
+                    model._startDetection(frame, "Fanta", 0.1)
             else:
                 print("Error: Could not open camera")
-            model._startDetection(frame, "Fanta", 0.1)
 
             if cv.waitKey(1) == ord('q'):
                 stop()

@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<launch>
+    <!-- Classification Launch -->
+    <include file="./launch/modelClassification.launch"></include>
+
+    <!-- Robotic Arm Launch -->
+    <include file="./launch/roboticArm.launch"></include>
+
+    <!-- SLAM Launch -->
+    <include file="./launch/slam.launch"></include>
+</launch>

@@ -1,13 +1,10 @@
-rate: 100
+rate: 10
 model:
   name: model_onnx
   path: "../Model/bestV5-20e.onnx"
 classes:
   name: classes_list
   list: ["Fanta", "Pepsi", "Seven"]
-imageSize:
-  name: image_size
-  value: 640
 confidence:
   name: conf_threshold
   value: 0.6

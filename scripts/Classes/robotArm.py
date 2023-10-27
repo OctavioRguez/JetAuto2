@@ -30,12 +30,16 @@ class robotArm:
         self.__q["q2"] = alpha - gamma
         self.__q["q4"] = -(self.__q["q2"] + self.__q["q3"])
 
+    # Private function for getting the final trajectory
+    def _trajectory(self, qIni:list, qFin:list, rate:int) -> list:       
+        return np.linspace(qIni, qFin, rate)
+    
     # Private function for starting the joints
     def _startArm(self) -> list:
         self.__q["q1"] = 0.0
-        self.__q["q2"] = 7*np.pi/16
-        self.__q["q3"] = np.pi/8
-        self.__q["q4"] = np.pi/8
+        self.__q["q2"] = np.pi/8
+        self.__q["q3"] = np.pi/3
+        self.__q["q4"] = -np.pi/6
         return list(self.__q.values())
 
     # Private function for resetting the joints
@@ -52,4 +56,3 @@ class robotArm:
         self.__q["q3"] *= (-1) # Invert the joint 3 angle
         self.__q["q4"] *= (-1) # Invert the joint 4 angle
         return list(self.__q.values())
-

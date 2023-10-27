@@ -166,6 +166,7 @@ include_directories(
 catkin_install_python(PROGRAMS
   scripts/armMovement.py
   scripts/objectClassificator.py
+  scripts/armTrajectory.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

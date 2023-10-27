@@ -7,9 +7,9 @@ from sensor_msgs.msg import Image
 from Classes.modelPredict import modelPredict
 
 class objectClassificator:
-    def __init__(self, model:str, classes:list, colors:list, imgSize:float, conf_threshold:float, cuda:bool) -> None:
+    def __init__(self, model:str, classes:list, conf_threshold:float, cuda:bool) -> None:
         # Instance of the class modelPredict
-        self.__model = modelPredict(model, classes, colors, imgSize, conf_threshold, cuda)
+        self.__model = modelPredict(model, classes, conf_threshold, cuda)
 
         # Initialize the variables
         self.__img = None
@@ -19,7 +19,7 @@ class objectClassificator:
         # Initialize the subscribers and publishers
         rospy.Subscriber("/video_source/raw", Image, self.__imageCallback) # Get the image from the camera
         rospy.Subscriber("/object/class", String, self.__classCallback) # Get the class of the object
-        self.__coord_pub = rospy.Publisher("/object/coords", Point, queue_size = 1) # Publish the coordinates of the object (m)
+        self.__coord_pub = rospy.Publisher("/object/coords", Point, queue_size = 10) # Publish the coordinates of the object (m)
 
     # Callback funtion for the image
     def __imageCallback(self, msg:Image) -> None:
@@ -47,18 +47,16 @@ if __name__ == '__main__':
     rospy.init_node("Classificator")
 
     # Initialize the rate
-    rate = rospy.Rate(rospy.get_param("rate", default = 100))
+    rate = rospy.Rate(rospy.get_param("rate", default = 10))
 
     # Get the parameters
-    model = rospy.get_param("model/path", default = "../Model/bestV5-20e.onnx")
+    model = rospy.get_param("model/path", default = "../Model/bestV5-25e.onnx")
     class_list = rospy.get_param("classes/list", default = ["Fanta", "Pepsi", "Seven"])
-    imgSize = rospy.get_param("imageSize/value", default = 640)
     conf = rospy.get_param("confidence/value", default = 0.5)
-    cuda = rospy.get_param("isCuda/value", default = True)
+    cuda = rospy.get_param("isCuda/value", default = False)
 
     # Create the instance of the class
-    colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
-    classificator = objectClassificator(model, class_list, colors, imgSize, conf, cuda)
+    classificator = objectClassificator(model, class_list, conf, cuda)
 
     # Shutdown hook
     rospy.on_shutdown(classificator._stop)

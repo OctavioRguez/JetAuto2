@@ -10,15 +10,15 @@ from Classes.robotArm import robotArm
 class armMovement:
     def __init__(self, links:list, vel:float) -> None:
         # Instance of the robot arm class
-        self.__jointsManager = robotArm(link for link in links)
+        self.__jointsManager = robotArm([link for link in links])
         # Real time Joints state
-        self.__jointsPosition = [0.0, 0.0, 0.0, 0.0]
+        self.__jointsPosition = [0.0, -np.pi/4, 5*np.pi/8, 3*np.pi/8]
         # Desired velocity for all servos (rad/s)
         self.__vel = vel
 
         # Initialize the subscribers and publishers
         rospy.Subscriber("/object/coords", Point, self.__coordsCallback)
-        rospy.Subscriber('/joint/states', JointState, self.__statesCallback)
+        rospy.Subscriber('/joint_states', JointState, self.__statesCallback)
         self.__joint1_pub = rospy.Publisher('/joint1_controller/command_duration', CommandDuration, queue_size = 1)
         self.__joint2_pub = rospy.Publisher('/joint2_controller/command_duration', CommandDuration, queue_size = 1)
         self.__joint3_pub = rospy.Publisher('/joint3_controller/command_duration', CommandDuration, queue_size = 1)
@@ -34,7 +34,7 @@ class armMovement:
 
     # Callback function for the states of the joints
     def __statesCallback(self, msg:JointState) -> None:
-        self.__jointsPosition = msg.position # Get the position of all joints
+        self.__jointsPosition = msg.position[:-1] # Get the position of all joints
 
     # Publish the joints commands
     def jointsPublish(self, joints:list) -> None:

@@ -1,12 +1,12 @@
-rate: 100
-vel: 0.8
+rate: 30
+vel: 0.5
 links:
   link1:
     name: link_1
     lenght: 0.03
   link2:
     name: link_2
-    lenght: 0.133
+    lenght: 0.13
   link3:
     name: link_3
     lenght: 0.13
