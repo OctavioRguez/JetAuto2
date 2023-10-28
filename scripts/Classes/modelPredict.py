@@ -12,7 +12,7 @@ class modelPredict:
         self.__conf = conf_thres
         self.__buildModel(cuda)
 
-        self.__y = 0.0
+        self.__y = None
 
     # Define if opencv runs with CUDA or CPU (False = CPU, True = CUDA)
     def __buildModel(self, is_cuda:bool) -> None:
@@ -85,12 +85,12 @@ class modelPredict:
             x, y, w, h = box
             color = self.__colors[classid]
             cv.rectangle(img, (int(x), int(y)), (int(x + w), int(y + h)), color, 2)
-            cv.rectangle(img, (int(x), int(y) - 20), (int(x) + int(w), int(y) + 20), color, -1)
-            cv.putText(img, f'{object}: {score:.2f}', (x, y - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv.LINE_AA)
+            cv.rectangle(img, (int(x), int(y) - 15), (int(x) + int(w), int(y) + 15), color, -1)
+            cv.putText(img, f"{object}: {score:.2f}", (int(x), int(y) + 10), cv.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 1, cv.LINE_AA)
 
-            # Calculate pixels to meters ratio
+            # Calculate pixels to meters ratio                   
             PixToMeters = width / w
-            self.__y = PixToMeters*(x + w - self.__imgWidth)/2
+            self.__y = PixToMeters*(x + (w - self.__imgWidth)/2)
         cv.imshow('Classificator', img)
         cv.waitKey(1)
 

@@ -57,13 +57,13 @@ class armTrajectory:
     def _start(self) -> None:
         print("The Arm Movement node is Running")
         joints = self.__jointsManager._startArm()
-        self.jointsPublish(joints)
+        self.__trajectory = np.flip(self.__jointsManager._trajectory(self.__jointsPosition, joints, self.__rate))
 
     # Reset the arm position when the node is shutdown
     def _stop(self) -> None:
         print("Stopping the Arm Movement node")
         joints = self.__jointsManager._resetArm()
-        self.jointsPublish(joints)
+        self.__trajectory = np.flip(self.__jointsManager._trajectory(self.__jointsPosition, joints, self.__rate))
 
 if __name__ == '__main__':
     # Initialize ROS node

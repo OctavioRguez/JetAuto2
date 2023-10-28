@@ -7,7 +7,7 @@ classes:
   list: ["Fanta", "Pepsi", "Seven"]
 confidence:
   name: conf_threshold
-  value: 0.6
+  value: 0.8
 cuda:
   name: enable_cuda
   value: True

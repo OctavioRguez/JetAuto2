@@ -27,10 +27,9 @@ class armMovement:
     # Callback function for the coordinates of the object
     def __coordsCallback(self, msg:Point) -> None:
         x, y, z = msg.x, msg.y, msg.z # Get the coordinates of the object (m)
-        if x < 0.25:
-            self.__jointsManager._inverseKinematics(x, y, z) # Calculate the inverse kinematics
-            joints = self.__jointsManager.getJoints() # Get the joint angles
-            self.jointsPublish(joints)
+        self.__jointsManager._inverseKinematics(x, y, z) # Calculate the inverse kinematics
+        joints = self.__jointsManager.getJoints() # Get the joint angles
+        self.jointsPublish(joints) if joints else None # Publish the joints commands
 
     # Callback function for the states of the joints
     def __statesCallback(self, msg:JointState) -> None:
