@@ -3,7 +3,7 @@ import rospy
 import numpy as np
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import JointState
-from std_msgs.msg import Float32
+from std_msgs.msg import Float64
 from Classes.robotArm import robotArm
 
 # Class to move the arm
@@ -14,17 +14,17 @@ class armTrajectory:
         # Real time Joints state
         self.__jointsPosition = [0.0, -np.pi/4, 5*np.pi/8, 3*np.pi/8]
         # Trajectory for the arm
-        self.__trajectory = np.array([])
+        self.__trajectory = np.array()
         # Rate for calculating the trajectory
         self.__rate = rate
 
         # Initialize the subscribers and publishers
         rospy.Subscriber("/object/coords", Point, self.__coordsCallback)
         rospy.Subscriber('/joint_states', JointState, self.__statesCallback)
-        self.__joint1_pub = rospy.Publisher('/joint1_controller', Float32, queue_size = 10)
-        self.__joint2_pub = rospy.Publisher('/joint2_controller', Float32, queue_size = 10)
-        self.__joint3_pub = rospy.Publisher('/joint3_controller', Float32, queue_size = 10)
-        self.__joint4_pub = rospy.Publisher('/joint4_controller', Float32, queue_size = 10)
+        self.__joint1_pub = rospy.Publisher('/joint1_controller/command', Float64, queue_size = 10)
+        self.__joint2_pub = rospy.Publisher('/joint2_controller/command', Float64, queue_size = 10)
+        self.__joint3_pub = rospy.Publisher('/joint3_controller/command', Float64, queue_size = 10)
+        self.__joint4_pub = rospy.Publisher('/joint4_controller/command', Float64, queue_size = 10)
 
     # Callback function for the coordinates of the object
     def __coordsCallback(self, msg:Point) -> None:
@@ -34,7 +34,7 @@ class armTrajectory:
             joints = self.__jointsManager.getJoints() # Get the joint angles
 
             # Calculate the trajectory and flip it to get the goal position at the beginning
-            self.__trajectory = np.flip(self.__jointsManager._trajectory(self.__jointsPosition, joints, self.__rate))
+            self.__trajectory = self.__jointsManager._trajectory(self.__jointsPosition, joints, self.__rate)
 
     # Callback function for the states of the joints
     def __statesCallback(self, msg:JointState) -> None:
@@ -43,7 +43,8 @@ class armTrajectory:
     # Get the next position of the trajectory
     def getNextPosition(self) -> list:
         if self.__trajectory.size > 0: # Check if the trajectory is not empty
-            return self.__trajectory.pop()
+            pos, self.__trajectory = self.__trajectory[0], self.__trajectory[1:]
+            return pos
         return None
 
     # Publish the joints commands
@@ -55,29 +56,29 @@ class armTrajectory:
 
     # Function to set a start position
     def _start(self) -> None:
-        print("The Arm Movement node is Running")
+        print("The Arm Trajectory node is Running")
         joints = self.__jointsManager._startArm()
         self.__trajectory = np.flip(self.__jointsManager._trajectory(self.__jointsPosition, joints, self.__rate))
 
     # Reset the arm position when the node is shutdown
     def _stop(self) -> None:
-        print("Stopping the Arm Movement node")
+        print("Stopping the Arm Trajectory node")
         joints = self.__jointsManager._resetArm()
         self.__trajectory = np.flip(self.__jointsManager._trajectory(self.__jointsPosition, joints, self.__rate))
 
 if __name__ == '__main__':
     # Initialize ROS node
-    rospy.init_node('Arm_Movement')
+    rospy.init_node('Arm_Trajectory')
 
     # Initialize the rate
-    rate = rospy.Rate(10)
+    rate = rospy.Rate(100)
 
     # Get the parameters
     l1 = rospy.get_param("links/link1/lenght", default = 0.03)
     l2 = rospy.get_param("links/link2/lenght", default = 0.13)
     l3 = rospy.get_param("links/link3/lenght", default = 0.13)
     l4 = rospy.get_param("links/link4/lenght", default = 0.05)
-    ratio = rospy.get_param("rate", default = 30)
+    ratio = rospy.get_param("rate", default = 300)
 
     # Create the instance of the class
     roboticArm = armTrajectory([l1, l2, l3, l4], ratio)

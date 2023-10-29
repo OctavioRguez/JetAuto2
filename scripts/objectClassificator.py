@@ -14,7 +14,7 @@ class objectClassificator:
         # Initialize the variables
         self.__img = None
         self.__object = None # Desired Class name of the object
-        self.__objWidth, self.__objHeight = 0.05, 0.1 # Object dimensions (m)
+        self.__objWidth, self.__objHeight = 0.05, 0.12 # Object dimensions (m)
 
         # Initialize the subscribers and publishers
         rospy.Subscriber("/video_source/raw", Image, self.__imageCallback) # Get the image from the camera
@@ -36,7 +36,7 @@ class objectClassificator:
     def _startModel(self) -> None:
         if (self.__img is not None) and (self.__object is not None):
             self.__model._startDetection(self.__img, self.__object, self.__objWidth) # Detect on current frame
-            self.__coord_pub.publish(0.2, self.__model.getY(), -0.17 + self.__objHeight/2)
+            self.__coord_pub.publish(0.25, self.__model.getY(), -0.17 + self.__objHeight/2)
 
     # Stop Condition
     def _stop(self) -> None:

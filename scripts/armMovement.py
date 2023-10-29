@@ -61,7 +61,7 @@ if __name__ == '__main__':
     rospy.init_node('Arm_Movement')
 
     # Initialize the rate
-    rate = rospy.Rate(rospy.get_param("rate", default = 10))
+    rate = rospy.Rate(10)
 
     # Get the parameters
     l1 = rospy.get_param("links/link1/lenght", default = 0.03)
