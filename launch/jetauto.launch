@@ -7,5 +7,5 @@
     <include file="$(find JetAuto2)/launch/roboticArm.launch"></include>
 
     <!-- SLAM Launch -->
-    <include file="$(find JetAuto2)/launch/slam.launch"></include>
+    <!-- <include file="$(find JetAuto2)/launch/slam.launch"></include> -->
 </launch>

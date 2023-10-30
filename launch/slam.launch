@@ -1,14 +1,22 @@
 <?xml version="1.0" ?>
 <launch>
+    <!-- Parameters file -->
+    <rosparam file="$(find JetAuto2)/config/jetautoClassification.yaml" />
+
     <!-- Lidar Launch -->
     <include file="$(find jetauto_peripherals)/launch/lidar.launch"></include>
 
     <!-- Odometry Launch -->
-    <include file="$(find jetauto_controller)/launch/odom_publish.launch"></include>
+    <!-- <include file="$(find jetauto_controller)/launch/odom_publish.launch"></include> -->
+
+    <!-- Controller Launch -->
+    <include file="$(find jetauto_controller)/launch/jetauto_controller.launch"></include>
+
+    <!-- Nodes -->
+    <node name="ObstacleAvoidance" pkg="JetAuto2" type="lidarAvoidance.py" output='screen'/>
 
     <!-- SLAM Package-->
-    <node pkg="gmapping" type="slam_gmapping" name="gmapping">
-        <!-- <param name="frequency"             value="10.0"/> -->
+    <!-- <node pkg="gmapping" type="slam_gmapping" name="gmapping">
         <param name="base_frame"            value="base_footprint"/>
         <param name="odom_frame"            value="odom" />
         <param name="map_frame"             value="map" />
@@ -17,5 +25,5 @@
         <param name="maxRange"              value="2.0"/>
         <param name="particles"             value="50"/>
         <param name="delta"                 value="0.025"/>
-    </node>
+    </node> -->
 </launch>
