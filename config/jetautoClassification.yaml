@@ -1,13 +1,13 @@
 rate: 10
 model:
   name: model_onnx
-  path: "../Model/bestV5-20e.onnx"
+  path: "/mnt/c/Users/Misael.Octavio/Documents/Tec/Sistemas Ciberfisicos II/JetAuto2/Ciberfisicos_ws/src/JetAuto2/Model/bestV5-25e.onnx"
 classes:
   name: classes_list
   list: ["Fanta", "Pepsi", "Seven"]
 confidence:
   name: conf_threshold
   value: 0.8
-cuda:
+isCuda:
   name: enable_cuda
-  value: True
+  value: False

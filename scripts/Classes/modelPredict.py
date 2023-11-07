@@ -87,8 +87,10 @@ class modelPredict:
         return result_class_ids, result_boxes, result_scores
 
     # Start the detection process
-    def _startDetection(self, img:cv.Mat, object:str, width:float) -> None:
-        # Get the image shape
+    def _startDetection(self, imgData:list, object:str, width:float) -> None:
+        # Decode the image
+        img = cv.imdecode(np.frombuffer(imgData, np.uint8), cv.IMREAD_COLOR)
+        # Get the image shapes
         self.__imgHeight, self.__imgWidth = img.shape[:2]
         
         # Perform the detection

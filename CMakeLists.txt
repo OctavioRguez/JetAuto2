@@ -13,7 +13,6 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   sensor_msgs
   std_msgs
-  hiwonder_servo_msgs
   nav_msgs
 )
 
@@ -165,8 +164,9 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
   scripts/armMovement.py
-  scripts/objectClassificator.py
   scripts/armTrajectory.py
+  scripts/objectClassificator.py
+  scripts/lidarAvoidance.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

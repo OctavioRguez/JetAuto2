@@ -1,9 +1,8 @@
 #!/usr/bin/python3
 import rospy
-import cv_bridge
 from std_msgs.msg import String
 from geometry_msgs.msg import Point
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import CompressedImage
 from Classes.modelPredict import modelPredict
 
 class objectClassificator:
@@ -17,26 +16,30 @@ class objectClassificator:
         self.__objWidth, self.__objHeight = 0.05, 0.12 # Object dimensions (m)
 
         # Initialize the subscribers and publishers
-        rospy.Subscriber("/video_source/raw", Image, self.__imageCallback) # Get the image from the camera
+        rospy.Subscriber("/usb_cam/image_raw/compressed", CompressedImage, self.__imageCallback) # Get the image from the camera
         rospy.Subscriber("/object/class", String, self.__classCallback) # Get the class of the object
         self.__coord_pub = rospy.Publisher("/object/coords", Point, queue_size = 10) # Publish the coordinates of the object (m)
 
     # Callback funtion for the image
-    def __imageCallback(self, msg:Image) -> None:
+    def __imageCallback(self, msg:CompressedImage) -> None:
         try:
-            self.__img = cv_bridge.CvBridge().imgmsg_to_cv(msg, desired_encoding = 'passthrough') # Conversion from imgmsg to cv
-        except cv_bridge.CvBridgeError as e:
-            rospy.loginfo(e) # Catch an error
+            self.__img = msg.data
+        except Exception as e:
+            rospy.loginfo(e)
 
     # Callback function for the class name
     def __classCallback(self, msg:String) -> None:
+        print(msg.data)
         self.__object = msg.data
 
     # Start the model classification
     def _startModel(self) -> None:
-        if (self.__img is not None) and (self.__object is not None):
+        if self.__img is not None:
+            print(self.__object)
             self.__model._startDetection(self.__img, self.__object, self.__objWidth) # Detect on current frame
-            self.__coord_pub.publish(0.25, self.__model.getY(), -0.17 + self.__objHeight/2)
+            y = self.__model.getY() # Get the y coordinate of the object
+            if y is not None:
+                self.__coord_pub.publish(0.25, y, -0.17+self.__objHeight/2)
 
     # Stop Condition
     def _stop(self) -> None:
@@ -50,9 +53,9 @@ if __name__ == '__main__':
     rate = rospy.Rate(rospy.get_param("rate", default = 10))
 
     # Get the parameters
-    model = rospy.get_param("model/path", default = "../Model/bestV5-25e.onnx")
+    model = rospy.get_param("model/path", default = "./Model/bestV5-25e.onnx")
     class_list = rospy.get_param("classes/list", default = ["Fanta", "Pepsi", "Seven"])
-    conf = rospy.get_param("confidence/value", default = 0.5)
+    conf = rospy.get_param("confidence/value", default = 0.8)
     cuda = rospy.get_param("isCuda/value", default = False)
 
     # Create the instance of the class

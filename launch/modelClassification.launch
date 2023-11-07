@@ -7,5 +7,5 @@
     <include file="$(find jetauto_peripherals)/launch/usb_cam.launch"></include>
 
     <!-- Nodes -->
-    <node name="Classificator" pkg="JetAuto2" type="objectClassificator.py" output='screen'/>
+    <!-- <node name="Classificator" pkg="JetAuto2" type="objectClassificator.py" output='screen'/> -->
 </launch>

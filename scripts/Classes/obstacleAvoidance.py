@@ -26,7 +26,7 @@ class obstacleAvoidance:
             self.__angular = 0.0
         # Check if there are obstacles in all directions
         elif all(dist < self.__safeDistance for dist in dists):
-            self.__linear = 0
+            self.__linear = 0.0
             self.__angular = -0.5
         else:
             if leftDist > rightDist:
@@ -34,25 +34,25 @@ class obstacleAvoidance:
                 self.__count2 = 0
                 # Turn is taken after 5 counts, to avoid jerking
                 if self.__count1 >= 5:
-                    self.__linear = 0
+                    self.__linear = 0.0
                     self.__angular = 0.5
 
                     if all(dist > self.__safeDistance for dist in dists):
                         self.__count1 = 0
                         self.__linear = 0.15
-                        self.__angular = 0
+                        self.__angular = 0.0
             elif leftDist < rightDist :
                 self.__count1 = 0
                 self.__count2 += 1
                 # Turn is taken after 5 counts, to avoid jerking
                 if self.__count2 >= 5:
-                    self.__linear = 0
+                    self.__linear = 0.0
                     self.__angular = -0.5
         
                     if all(dist > self.__safeDistance for dist in dists):
                         self.__count2 = 0
                         self.__linear = 0.15
-                        self.__angular = 0
+                        self.__angular = 0.0
 
     # Public funtion for getting linear velocity
     def getLinear(self) -> float:
