@@ -15,6 +15,8 @@ class objectClassificator:
         self.__object = None # Desired Class name of the object
         self.__objWidth, self.__objHeight = 0.05, 0.12 # Object dimensions (m)
 
+        self.__errorTolerance = 0.02 # Tolerance for the error (m)
+
         # Initialize the subscribers and publishers
         rospy.Subscriber("/usb_cam/image_raw/compressed", CompressedImage, self.__imageCallback) # Get the image from the camera
         rospy.Subscriber("/object/class", String, self.__classCallback) # Get the class of the object
@@ -38,7 +40,7 @@ class objectClassificator:
             print(self.__object)
             self.__model._startDetection(self.__img, self.__object, self.__objWidth) # Detect on current frame
             y = self.__model.getY() # Get the y coordinate of the object
-            if y is not None:
+            if (y is not None) and not(-self.__errorTolerance < y < self.__errorTolerance):
                 self.__coord_pub.publish(0.25, y, -0.17+self.__objHeight/2)
 
     # Stop Condition

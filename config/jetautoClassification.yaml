@@ -1,4 +1,4 @@
-rate: 10
+rate: 30
 model:
   name: model_onnx
   path: "/mnt/c/Users/Misael.Octavio/Documents/Tec/Sistemas Ciberfisicos II/JetAuto2/Ciberfisicos_ws/src/JetAuto2/Model/bestV5-25e.onnx"

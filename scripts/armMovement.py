@@ -38,7 +38,8 @@ class armMovement:
     # Publish the joints commands
     def jointsPublish(self, joints:list) -> None:
         # Get the time (ms) for the servos to move
-        t1, t2, t3, t4 = np.abs(np.array(self.__jointsPosition) - np.array(joints)) / self.__vel * 1000
+        # rospy.loginfo(self.__jointsPosition)
+        t1, t2, t3, t4 = float(np.abs(np.array(self.__jointsPosition) - np.array(joints)) / self.__vel * 1000)
         self.__joint1_pub.publish(joints[0], t1) # Publish the joint 1 data
         self.__joint2_pub.publish(joints[1], t2) # Publish the joint 2 data
         self.__joint3_pub.publish(joints[2], t3) # Publish the joint 3 data
@@ -68,7 +69,7 @@ if __name__ == '__main__':
     l2 = rospy.get_param("links/link2/lenght", default = 0.13)
     l3 = rospy.get_param("links/link3/lenght", default = 0.13)
     l4 = rospy.get_param("links/link4/lenght", default = 0.05)
-    vel = rospy.get_param("vel", default = 1.0)
+    vel = rospy.get_param("vel", default = 0.2)
 
     # Create the instance of the class
     roboticArm = armMovement([l1, l2, l3, l4], vel)
