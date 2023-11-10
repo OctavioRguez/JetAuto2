@@ -1,7 +1,7 @@
 rate: 30
 model:
   name: model_onnx
-  path: "/mnt/c/Users/Misael.Octavio/Documents/Tec/Sistemas Ciberfisicos II/JetAuto2/Ciberfisicos_ws/src/JetAuto2/Model/bestV5-25e.onnx"
+  path: "/home/sr_tavo/Ciberfisicos_ws/src/JetAuto2/Model/bestV5-25e.onnx"
 classes:
   name: classes_list
   list: ["Fanta", "Pepsi", "Seven"]
