@@ -78,7 +78,7 @@ if __name__ == '__main__':
     l2 = rospy.get_param("links/link2/lenght", default = 0.13)
     l3 = rospy.get_param("links/link3/lenght", default = 0.13)
     l4 = rospy.get_param("links/link4/lenght", default = 0.05)
-    ratio = rospy.get_param("rate", default = 300)
+    ratio = rospy.get_param("rateArm", default = 300)
 
     # Create the instance of the class
     roboticArm = armTrajectory([l1, l2, l3, l4], ratio)

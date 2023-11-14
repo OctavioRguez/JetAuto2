@@ -15,7 +15,7 @@ class obstacleAvoidance:
     # Private function for avoiding obstacles by changing linear and angular velocities
     def _avoidObstacles(self, scanData: list) -> None:
         # Minimum distance from obstacles at each direction
-        forwardDist = min(scanData[:41] + scanData[680:719])
+        forwardDist = min(scanData[:144] + scanData[1004:1147])
         rightDist = min(scanData[41:180])
         leftDist = min(scanData[540:680])
         dists = [forwardDist, leftDist, rightDist]

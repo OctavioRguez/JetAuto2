@@ -35,7 +35,7 @@ if __name__ == '__main__':
     rospy.init_node("Lidar_Obstacle_Avoidance")
 
     # Initialize the rate
-    rate = rospy.Rate(rospy.get_param("rate", default = 10))
+    rate = rospy.Rate(rospy.get_param("rateObst", default = 15))
 
     # Get parameters
     safeDist = rospy.get_param("safe_distance", default = 0.5)

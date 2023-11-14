@@ -1,5 +1,5 @@
-rate: 500
-vel: 0.2
+rateArm: 500
+vel: 0.1
 links:
   link1:
     name: link_1

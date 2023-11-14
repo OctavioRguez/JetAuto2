@@ -13,6 +13,8 @@ class modelPredict:
         self.__conf = conf_thres
         self.__buildModel(cuda) # Build the model for inference
 
+        # X coordinate of the object
+        self.__x = None
         # Y coordinate of the object
         self.__y = None
 
@@ -20,10 +22,10 @@ class modelPredict:
     def __buildModel(self, is_cuda:bool) -> None:
         if is_cuda:
             print("Attempting to use CUDA")
-            self.__session = ort.InferenceSession(self.__model, providers=['CUDAExecutionProvider'])
+            self.__session = ort.InferenceSession(self.__model, providers = ['CUDAExecutionProvider'])
         else:
             print("Running on CPU")
-            self.__session = ort.InferenceSession(self.__model, providers=['CPUExecutionProvider'])
+            self.__session = ort.InferenceSession(self.__model, providers = ['CPUExecutionProvider'])
         # Get the input image shape for the model (width, height)
         shape = self.__session.get_inputs()[0].shape
         self.__inputWidth, self.__inputHeight = shape[2:4]
@@ -32,14 +34,14 @@ class modelPredict:
     def __formatImg(self, img:cv.Mat) -> np.ndarray:
         image = cv.cvtColor(img, cv.COLOR_BGR2RGB)
         image = np.array(cv.resize(image, [self.__inputWidth, self.__inputHeight])) / 255.0 # Resize (input shape) and normalize (0-1)
-        image = np.transpose(image, (2, 0, 1)) # Transpose to (channels, width, height)
+        image = np.transpose(image, (2, 0, 1)) # Transpose to have: (channels, width, height)
         return np.expand_dims(image, axis=0).astype(np.float32) # Add batch dimension to create tensor (b, c, w, h)
 
-    # Detect objects in the image
+    # Detect objects and get the raw output from the model
     def __detect(self, img:cv.Mat) -> np.ndarray:
-        inputs = {self.__session.get_inputs()[0].name: img} # Get the input name of the model
+        inputs = {self.__session.get_inputs()[0].name: img} # Prepare the input for the model
         preds = self.__session.run(None, inputs) # Perform inference
-        return np.squeeze(preds[0]) # Remove batch dimension 
+        return np.squeeze(preds[0]) # Remove batch dimension
 
     # Wrap the detection processing
     def __wrapDetection(self, modelOutput:np.ndarray, object:str) -> tuple:
@@ -73,18 +75,18 @@ class modelPredict:
                     # Append the results to the lists
                     class_ids.append(class_id)
                     scores.append(max_score)
-                    boxes.append(np.array([left, top, width, height]))
+                    boxes.append(np.array([int(left), int(top), int(width), int(height)]))
 
         # Apply non-maximum suppression to suppress overlapping boxes
         indices = cv.dnn.NMSBoxes(boxes, scores, self.__conf, 0.5)
 
         # Get the final results
-        result_class_ids, result_boxes, result_scores = [], [], []
+        final_class_ids, final_boxes, final_scores = [], [], []
         for i in indices:
-            result_class_ids.append(class_ids[i])
-            result_boxes.append(boxes[i])
-            result_scores.append(scores[i])
-        return result_class_ids, result_boxes, result_scores
+            final_class_ids.append(class_ids[i])
+            final_boxes.append(boxes[i])
+            final_scores.append(scores[i])
+        return final_class_ids, final_boxes, final_scores
 
     # Start the detection process
     def _startDetection(self, imgData:list, object:str, width:float) -> None:
@@ -92,31 +94,41 @@ class modelPredict:
         img = cv.imdecode(np.frombuffer(imgData, np.uint8), cv.IMREAD_COLOR)
         # Get the image shapes
         self.__imgHeight, self.__imgWidth = img.shape[:2]
-        
+
         # Perform the detection
         formatImg = self.__formatImg(img)
         outs = self.__detect(formatImg)
         class_ids, boxes, scores = self.__wrapDetection(outs, object)
-        
-        # Draw the bounding boxes and labels
-        for (classid, box, score) in zip(class_ids, boxes, scores):
+
+        if class_ids:
+            # Get the detected object with the highest score
+            index = np.argmax(scores)
+
             # Decompress the bounding box coordinates
-            x, y, w, h = box
-            color = self.__colors[classid]
-            
+            x, y, w, h = boxes[index]
+            color = self.__colors[class_ids[index]]
+
             # Draw the bounding box for the object
-            cv.rectangle(img, (int(x), int(y)), (int(x + w), int(y + h)), color, 2)
+            cv.rectangle(img, (x, y), (x + w, y + h), color, 2)
             # Draw the label background
-            cv.rectangle(img, (int(x), int(y) - 15), (int(x) + int(w), int(y) + 15), color, -1)
+            cv.rectangle(img, (x, y - 15), (x + w, y + 15), color, -1)
             # Draw the label and confidence of the object
-            cv.putText(img, f"{object}: {score:.4f}", (int(x), int(y) + 10), cv.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 1, cv.LINE_AA)
+            cv.putText(img, f"{object}: {scores[index]:.3f}", (x, y + 10), cv.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 1, cv.LINE_AA)
 
             # Calculate pixels to meters ratio
             PixToMeters = width / w
             # Calculate the Y coordinate of the object
             self.__y = PixToMeters*(x + (w - self.__imgWidth)/2)
+
+            # Calculate the X coordinate of the object
+            self.__x = None
+
         cv.imshow('Classificator', img)
         cv.waitKey(1)
+
+    # Get the X coordinate of the object
+    def getX(self) -> float:
+        return self.__x
 
     # Get the Y coordinate of the object
     def getY(self) -> float:
