@@ -13,13 +13,17 @@ class objectClassificator:
         # Initialize the variables
         self.__img = None
         self.__object = None # Desired Class name of the object
-        self.__baseHeight = 0.1 # Base height for the object (m)
+        self.__baseHeight = 0.11 # Base height for the object (m)
         self.__objWidth, self.__objHeight = 0.065, 0.12 # Object dimensions (m)
 
-        self.__robotY = 0.0 # Current y coordinate of the arm
+         # Current end effector coordinates of the arm
+        self.__robot = {"x":0.22, 
+                            "y":0.0, 
+                            "z":-0.11+self.__baseHeight+self.__objHeight/2}
         self.__lastY = 0.0 # Last y coordinate of the object
-        self.__tolerance = 0 # Tolerance for getting the object velocity
+        self.__tolerance = 0 # Tolerance for moving the arm
         self.__errorTolerance = 0.01 # Tolerance for the error (m)
+        self.__grab = False # Flag for check if the object is grabbed
 
         # Initialize the subscribers and publishers
         rospy.Subscriber("/usb_cam/image_raw/compressed", CompressedImage, self.__imageCallback) # Get the image from the camera
@@ -37,26 +41,32 @@ class objectClassificator:
 
     # Start the model classification
     def _startModel(self) -> None:
-        if self.__img is not None:
+        if self.__img is not None and not self.__grab:
             # Detect on current frame
             self.__model._startDetection(self.__img, self.__object, self.__objWidth)
-            x, y = self.__model.getX(), self.__model.getY() # Get the coordinates of the object
+            x, y = self.__model.getDepth(), self.__model.getHorizontal() # Get the coordinates of the object
 
             if (y is not None):
                 # Update the tolerance
-                self.__tolerance += 1 if -self.__errorTolerance < (self.__lastY - y) < self.__errorTolerance else -self.__tolerance
+                self.__tolerance += 1 if (-1e-3 < (self.__lastY - y) < 1e-3) else -self.__tolerance
                 self.__lastY = y
 
-                # Check if the object has not moved for a while
-                if (self.__tolerance > 10):
+                # Check if the object has not moved for "n" iterations
+                if (self.__tolerance > 4):
                     # Check if the y coordinate is close to zero (middle of the image)
                     if not(-self.__errorTolerance < y < self.__errorTolerance):
-                        self.__robotY += y
-                        self.__coord_pub.publish(0.2, self.__robotY, -0.17+self.__baseHeight+self.__objHeight/2)
-                    elif (x is not None):
-                        self.__coord_pub.publish(0.2+(x-0.05), self.__robotY, -0.17+self.__base+self.__objHeight/2)
-                        self.__grab_pub.publish(True)
-                    self.__tolerance = 0
+                        self.__robot["y"] += y
+                        self.__coord_pub.publish(Point(self.__robot.values()))
+                        self.__tolerance = 0
+                    # Check if the x coordinate is not None and close enough to grab the
+                    elif (x is not None and x > 1):
+                        self.__robot["x"] += (x-0.08)
+                        self.__coord_pub.publish(Point(self.__robot.values()))
+                        self.__grab = True
+                        self.__grab_pub.publish(self.__grab)
+                    else:
+                        self.__robot["x"] = 0.22
+                rospy.loginfo(x, y)
 
     # Stop Condition
     def _stop(self) -> None:
@@ -88,5 +98,5 @@ if __name__ == '__main__':
             classificator._startModel()
         except rospy.ROSInterruptException as ie:
             rospy.loginfo(ie) # Catch an Interruption
-        
+
         rate.sleep()

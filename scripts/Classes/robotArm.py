@@ -43,7 +43,7 @@ class robotArm:
         self.__q["q1"] = 0.0
         self.__q["q2"] = -np.pi/4
         self.__q["q3"] = 5*np.pi/8
-        self.__q["q4"] = 2.5*np.pi/8
+        self.__q["q4"] = np.pi/4
         return list(self.__q.values())
 
     # Private function for resetting the joints

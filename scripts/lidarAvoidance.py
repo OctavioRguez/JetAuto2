@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import rospy
 from sensor_msgs.msg import LaserScan
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, Point
 from Classes.obstacleAvoidance import obstacleAvoidance
 
 # Avoid obstacles based on LiDAR data
@@ -11,18 +11,27 @@ class lidarAvoidance:
         self.__obstacleManager = obstacleAvoidance(dist)
         # Velocity message
         self.__velocity = Twist()
+        # Flag to activate the navigation
+        self.__navegate = True
 
         # Initialize the subscribers and publishers
         rospy.Subscriber("/scan", LaserScan, self.__scanCallback)
+        rospy.Subscriber("/object/coords", Point, self.__coordsCallback)
         self.__vel_pub = rospy.Publisher("/jetauto_controller/cmd_vel", Twist, queue_size = 10)
 
     def __scanCallback(self, data:LaserScan) -> None:
-        # Check for obstacles
-        self.__obstacleManager._avoidObstacles(data.ranges)
-        # Get linear and angular velocities
-        self.__velocity.linear.x = self.__obstacleManager.getLinear()
-        self.__velocity.angular.z = self.__obstacleManager.getAngular()
-        self.__vel_pub.publish(self.__velocity) # Publish the velocity
+        if self.__navegate:
+            # Check for obstacles
+            self.__obstacleManager._avoidObstacles(data.ranges)
+            # Get linear and angular velocities
+            self.__velocity.linear.x = self.__obstacleManager.getLinear()
+            self.__velocity.angular.z = self.__obstacleManager.getAngular()
+            self.__vel_pub.publish(self.__velocity) # Publish the velocity
+
+    def __coordsCallback(self, data:Point) -> None:
+        vel = 0.0 if data.x>0.22 else 0.04
+        self.__obstacleManager.changeLinearVelocity(vel, vel)
+        self.__obstacleManager.changeAngularVelocity(0.0, 0.0)
 
     def _stop(self) -> None:
         # Stop the robot

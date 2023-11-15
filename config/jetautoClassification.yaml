@@ -1,4 +1,4 @@
-rateClass: 15
+rateClass: 30
 model:
   name: model_onnx
   path: "/home/sr_tavo/Ciberfisicos_ws/src/JetAuto2/Model/bestV5-25e.onnx"

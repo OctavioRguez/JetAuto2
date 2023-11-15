@@ -13,10 +13,12 @@ class modelPredict:
         self.__conf = conf_thres
         self.__buildModel(cuda) # Build the model for inference
 
-        # X coordinate of the object
-        self.__x = None
-        # Y coordinate of the object
-        self.__y = None
+        # Depth of the object from the camera (m)
+        self.__depth = None
+        # Horizontal distance of the object from the camera (m)
+        self.__horizontal = None
+        # Focal distance of the camera (pixels)
+        self.__focalLength = 514
 
     # Define if opencv runs with CUDA or CPU (False = CPU, True = CUDA)
     def __buildModel(self, is_cuda:bool) -> None:
@@ -52,7 +54,7 @@ class modelPredict:
         x_factor = self.__imgWidth / self.__inputWidth
         y_factor = self.__imgHeight / self.__inputHeight
 
-        # Iterate over the model output 
+        # Iterate over the model output
         rows = modelOutput.shape[0]
         for r in range(rows):
             row = modelOutput[r]
@@ -103,11 +105,9 @@ class modelPredict:
         if class_ids:
             # Get the detected object with the highest score
             index = np.argmax(scores)
-
             # Decompress the bounding box coordinates
             x, y, w, h = boxes[index]
             color = self.__colors[class_ids[index]]
-
             # Draw the bounding box for the object
             cv.rectangle(img, (x, y), (x + w, y + h), color, 2)
             # Draw the label background
@@ -115,21 +115,19 @@ class modelPredict:
             # Draw the label and confidence of the object
             cv.putText(img, f"{object}: {scores[index]:.3f}", (x, y + 10), cv.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 1, cv.LINE_AA)
 
-            # Calculate pixels to meters ratio
-            PixToMeters = width / w
-            # Calculate the Y coordinate of the object
-            self.__y = PixToMeters*(x + (w - self.__imgWidth)/2)
+            # Calculate the distance of the object from the camera
+            self.__depth = width * self.__focalLength / w
 
-            # Calculate the X coordinate of the object
-            self.__x = None
+            # Calculate the horizontal distance of the object from the camera
+            self.__horizontal = (x + (w - self.__imgWidth)/2) * self.__depth / self.__focalLength
 
         cv.imshow('Classificator', img)
         cv.waitKey(1)
 
     # Get the X coordinate of the object
-    def getX(self) -> float:
-        return self.__x
+    def getDepth(self) -> float:
+        return self.__depth
 
     # Get the Y coordinate of the object
-    def getY(self) -> float:
-        return self.__y
+    def getHorizontal(self) -> float:
+        return self.__horizontal

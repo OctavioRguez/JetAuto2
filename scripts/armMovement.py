@@ -51,7 +51,7 @@ class armMovement:
         self.__joint2_pub.publish(joints[1], t2) # Publish the joint 2 data
         self.__joint3_pub.publish(joints[2], t3) # Publish the joint 3 data
         self.__joint4_pub.publish(joints[3], t4) # Publish the joint 4 data
-        self.__gripper_pub.publish(1.0) if self.__grab else self.__gripper_pub.publish(0.0) # Publish the gripper data
+        self.__gripper_pub.publish(-48*np.pi/180) if self.__grab else self.__gripper_pub.publish(0.0) # Publish the gripper data
 
     # Function to set a start position
     def _start(self) -> None:
