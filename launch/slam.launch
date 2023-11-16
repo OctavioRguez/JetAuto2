@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <launch>
     <!-- Parameters file -->
-    <rosparam file="$(find JetAuto2)/config/jetautoClassification.yaml" />
+    <rosparam file="$(find JetAuto2)/config/jetautoObstacles.yaml" />
 
     <!-- Lidar Launch -->
     <include file="$(find jetauto_peripherals)/launch/lidar.launch"></include>
@@ -11,9 +11,6 @@
 
     <!-- Controller Launch -->
     <include file="$(find jetauto_controller)/launch/jetauto_controller.launch"></include>
-
-    <!-- Nodes -->
-    <node name="ObstacleAvoidance" pkg="JetAuto2" type="lidarAvoidance.py" output='screen'/>
 
     <!-- SLAM Package-->
     <!-- <node pkg="gmapping" type="slam_gmapping" name="gmapping">
@@ -26,4 +23,8 @@
         <param name="particles"             value="50"/>
         <param name="delta"                 value="0.025"/>
     </node> -->
+
+    <!-- Nodes -->
+    <node name="ObstacleAvoidance" pkg="JetAuto2" type="lidarAvoidance.py" output='screen'/>
+    <!-- <node type="rviz" name="rviz" pkg="rviz" args="-d $(find JetAuto2)/rviz/config.rviz" /> -->
 </launch>

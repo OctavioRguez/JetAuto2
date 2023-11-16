@@ -27,7 +27,7 @@ class armMovement:
         self.__joint2_pub = rospy.Publisher('/joint2_controller/command_duration', CommandDuration, queue_size = 1)
         self.__joint3_pub = rospy.Publisher('/joint3_controller/command_duration', CommandDuration, queue_size = 1)
         self.__joint4_pub = rospy.Publisher('/joint4_controller/command_duration', CommandDuration, queue_size = 1)
-        self.__gripper_pub = rospy.Publisher('/rjoint/command', Float64, queue_size = 1)
+        self.__gripper_pub = rospy.Publisher('/jointr/command', Float64, queue_size = 1)
 
     # Callback function for the coordinates of the object
     def __coordsCallback(self, msg:Point) -> None:
@@ -51,7 +51,14 @@ class armMovement:
         self.__joint2_pub.publish(joints[1], t2) # Publish the joint 2 data
         self.__joint3_pub.publish(joints[2], t3) # Publish the joint 3 data
         self.__joint4_pub.publish(joints[3], t4) # Publish the joint 4 data
-        self.__gripper_pub.publish(-48*np.pi/180) if self.__grab else self.__gripper_pub.publish(0.0) # Publish the gripper data
+        if self.__grab is True:
+            rospy.sleep(max(t1, t2, t3, t4) / 1000.0) # Wait for the servos to move
+            self.__gripper_pub.publish(-4*np.pi/15) # Publish the gripper data
+            rospy.sleep(1.5) # Wait for the gripper to close
+            self.__grab = None
+            self._start() # Move the arm to a start position
+        elif self.__grab is False:
+            self.__gripper_pub.publish(0.0) # Publish the gripper data
 
     # Function to set a start position
     def _start(self) -> None:

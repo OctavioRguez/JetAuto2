@@ -29,7 +29,7 @@ class lidarAvoidance:
             self.__vel_pub.publish(self.__velocity) # Publish the velocity
 
     def __coordsCallback(self, data:Point) -> None:
-        vel = 0.0 if data.x>0.22 else 0.04
+        vel = 0.0 if data.x>0.22 else 0.03
         self.__obstacleManager.changeLinearVelocity(vel, vel)
         self.__obstacleManager.changeAngularVelocity(0.0, 0.0)
 

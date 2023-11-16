@@ -2,6 +2,7 @@
 import cv2 as cv
 import numpy as np
 import onnxruntime as ort
+#pip install optimum[onnxruntime-gpu]
 
 # Classificator class
 class modelPredict:
@@ -91,7 +92,7 @@ class modelPredict:
         return final_class_ids, final_boxes, final_scores
 
     # Start the detection process
-    def _startDetection(self, imgData:list, object:str, width:float) -> None:
+    def _startDetection(self, imgData:list, object:str, width:float) -> tuple:
         # Decode the image
         img = cv.imdecode(np.frombuffer(imgData, np.uint8), cv.IMREAD_COLOR)
         # Get the image shapes
@@ -120,9 +121,10 @@ class modelPredict:
 
             # Calculate the horizontal distance of the object from the camera
             self.__horizontal = (x + (w - self.__imgWidth)/2) * self.__depth / self.__focalLength
-
-        cv.imshow('Classificator', img)
-        cv.waitKey(1)
+        else:
+            self.__depth = None
+            self.__horizontal = None
+        return cv.imencode('.jpg', img)[1].tobytes()
 
     # Get the X coordinate of the object
     def getDepth(self) -> float:
