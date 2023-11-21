@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 import rospy
 import numpy as np
-import random
 from std_msgs.msg import Bool
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import JointState
@@ -23,9 +22,9 @@ class armMovement:
         # Gripper close position
         self.__close = 0.0
         # Gripper open position
-        self.__open = 4*np.pi/9
+        self.__open = 4.5*np.pi/9
         # Joints coords for dropping an object
-        self.__dropCoords = [Point(0.0, 0.2, -0.08), Point(0.0, -0.2, -0.08), Point(0.23, 0.0, -0.08)]
+        self.__dropCoords = Point(0.0, -0.2, 0.1)
 
         # Initialize the subscribers and publishers
         rospy.Subscriber("/object/coords", Point, self.__coordsCallback)
@@ -66,7 +65,8 @@ class armMovement:
             self.gripperPublish(gripperCommand, (t1, t2, t3, t4)) # Publish the gripper data
             self._afterGrab() if self.__grab is True else None # Move the arm after grabbing an object
         else:
-            self._dropObject() if self.__dropCoords else None # Drop the object
+            rospy.sleep(max(t1, t2, t3, t4) / 1000.0)
+            self._dropObject() # Drop the object
 
     # Publish the gripper command
     def gripperPublish(self, command:float, jointsTime:list) -> None:
@@ -92,10 +92,10 @@ class armMovement:
     # Function to move the arm to a drop position
     def _dropObject(self) -> None:
         print("Dropping the object")
-        index = random.randint(0, len(self.__dropCoords)-1) # Select a random drop position from the available
         self.__grab = False # Open gripper
-        self.__coordsCallback(self.__dropCoords.pop(index)) # Move arm to drop position
+        self.__coordsCallback(self.__dropCoords) # Move arm to drop position
         self.__drop_pub.publish(True) # Publish that the object has been dropped
+        rospy.sleep(0.5)
         self._start() # Return arm to start position
 
     # Function to set a start position

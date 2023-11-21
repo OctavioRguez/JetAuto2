@@ -5,7 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /Status1
+        - /Odometry1/Status1
         - /Odometry1/Covariance1/Position1
       Splitter Ratio: 0.5
     Tree Height: 549
@@ -129,7 +129,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: map
+    Fixed Frame: base_link
     Frame Rate: 30
   Name: root
   Tools:
@@ -153,7 +153,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 7.377787113189697
+      Distance: 4.744352340698242
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -171,7 +171,7 @@ Visualization Manager:
       Pitch: 0.9753974676132202
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.1753811836242676
+      Yaw: 3.155380964279175
     Saved: ~
 Window Geometry:
   Displays:
@@ -190,4 +190,4 @@ Window Geometry:
     collapsed: false
   Width: 1267
   X: 378
-  Y: 31
+  Y: 27

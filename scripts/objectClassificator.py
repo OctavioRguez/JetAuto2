@@ -17,10 +17,10 @@ class objectClassificator:
         self.__object = None # Desired Class name of the object
         self.__objWidth, self.__objHeight = 0.06, 0.12 # Object dimensions (m)
 
-        self.__armCoords = {"x":0.22, "y":0.0, "z":self.__objHeight/2 - 0.03} # Current end effector coordinates of the arm (m)
+        self.__armCoords = {"x":0.22, "y":0.0, "z":self.__objHeight/2 - 0.035} # Current end effector coordinates of the arm (m)
         self.__lastY = 0.0 # Last y coordinate of the object (m)
         self.__tolerance = 10 # Tolerance for capturing the object movement (iterations)
-        self.__errorTolerance = 0.01 # Tolerance for the error (m)
+        self.__errorTolerance = 1e-2 # Tolerance for the error (m)
         self.__grab = False # Flag for check if the object is grabbed
 
         self.__kp = 0.7 # Proportional constant for the arm movement
@@ -47,6 +47,7 @@ class objectClassificator:
  
     def __dropCallback(self, msg:Bool) -> None:
         self.__grab = False if msg.data else self.__grab
+        self.__armCoords["y"] = 0.0
 
     # Start the model classification
     def _startModel(self) -> None:
@@ -77,13 +78,12 @@ class objectClassificator:
             # Check if the x coordinate is close enough to grab the object
             else:
                 x = (depth**2 - self.__armCoords["z"]**2)**0.5
-                rospy.loginfo(x)
-                if False: #x < 0.17:
+                if x < 0.17:
                     self.__grab, self.__object = True, None
                     self.__tolerance = 0
                     self.__grab_pub.publish(True)
-                    # rospy.sleep(1.0)
-                    self.__coord_pub.publish(self.__armCoords["x"]+(x-0.08), self.__armCoords["y"], self.__armCoords["z"]+0.03)
+                    rospy.sleep(1.0)
+                    self.__coord_pub.publish(self.__armCoords["x"]+(x-0.08), self.__armCoords["y"], self.__armCoords["z"]+0.025)
 
     # Stop Condition
     def _stop(self) -> None:
