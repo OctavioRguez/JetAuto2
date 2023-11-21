@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import numpy as np
+import random
 
 # Class for managing the robotic arm 
 class robotArm:
@@ -9,7 +10,7 @@ class robotArm:
         # Initialize the length of each link
         self.__l = {"l1":ls[0], "l2":ls[1], "l3":ls[2], "l4":ls[3]}
 
-    # Private function for solving the inverse kinematics
+    # Protected function for solving the inverse kinematics
     def _inverseKinematics(self, x:float, y:float, z:float) -> None:
         # Check if the arm is not going to hit
         if x >= 0.0 and z > -0.16 and (-0.15 > y > 0.15 or x > 0.17 or z > 0.05):
@@ -38,7 +39,7 @@ class robotArm:
             return np.array([])
         return np.linspace(qIni, qFin, rate)
 
-    # Private function for starting the joints
+    # Protected function for starting the joints
     def _startArm(self) -> list:
         self.__q["q1"] = 0.0
         self.__q["q2"] = -np.pi/4
@@ -46,12 +47,20 @@ class robotArm:
         self.__q["q4"] = np.pi/4
         return list(self.__q.values())
 
-    # Private function for resetting the joints
+    # Protected function for resetting the joints
     def _resetArm(self) -> list:
         self.__q["q1"] = 0.0
         self.__q["q2"] = -np.pi/4
         self.__q["q3"] = 5*np.pi/8
         self.__q["q4"] = 3*np.pi/8
+        return list(self.__q.values())
+    
+    # Protected function for moving the arm after grabbing an object
+    def _grabPosition(self) -> list:
+        self.__q["q1"] = 0.0
+        self.__q["q2"] = -np.pi/6
+        self.__q["q3"] = 5*np.pi/8
+        self.__q["q4"] = -np.pi/8
         return list(self.__q.values())
 
     # Public function for getting the joints

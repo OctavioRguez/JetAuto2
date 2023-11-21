@@ -1,11 +1,11 @@
 <?xml version="1.0" ?>
 <launch>
     <!-- Classification Launch -->
-    <include file="$(find JetAuto2)/launch/modelClassification.launch"></include>
+    <include file="$(find JetAuto2)/launch/include/modelClassification.launch"></include>
 
     <!-- Robotic Arm Launch -->
-    <include file="$(find JetAuto2)/launch/roboticArm.launch"></include>
+    <include file="$(find JetAuto2)/launch/include/roboticArm.launch"></include>
 
     <!-- SLAM Launch -->
-    <!-- <include file="$(find JetAuto2)/launch/slam.launch"></include> -->
+    <include file="$(find JetAuto2)/launch/include/slam.launch"></include>
 </launch>

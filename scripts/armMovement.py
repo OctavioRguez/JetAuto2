@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 import rospy
 import numpy as np
-from std_msgs.msg import Float64, Bool
+import random
+from std_msgs.msg import Bool
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import JointState
 from hiwonder_servo_msgs.msg import CommandDuration
@@ -13,21 +14,29 @@ class armMovement:
         # Instance of the robot arm class
         self.__jointsManager = robotArm([link for link in links])
         # Real time Joints state
-        self.__jointsPosition = [0.0, -np.pi/4, 5*np.pi/8, 3*np.pi/8]
+        self.__jointsPosition = [0.0, -np.pi/4, 5*np.pi/8, 3*np.pi/8, 0.0]
         # Desired velocity for all servos (rad/s)
         self.__vel = vel
+
         # Flag to grab the object
         self.__grab = False
+        # Gripper close position
+        self.__close = 0.0
+        # Gripper open position
+        self.__open = 4*np.pi/9
+        # Joints coords for dropping an object
+        self.__dropCoords = [Point(0.0, 0.2, -0.08), Point(0.0, -0.2, -0.08), Point(0.23, 0.0, -0.08)]
 
         # Initialize the subscribers and publishers
         rospy.Subscriber("/object/coords", Point, self.__coordsCallback)
         rospy.Subscriber("/object/grab", Bool, self.__grabCallback)
         rospy.Subscriber('/joint_states', JointState, self.__statesCallback)
-        self.__joint1_pub = rospy.Publisher('/joint1_controller/command_duration', CommandDuration, queue_size = 1)
-        self.__joint2_pub = rospy.Publisher('/joint2_controller/command_duration', CommandDuration, queue_size = 1)
-        self.__joint3_pub = rospy.Publisher('/joint3_controller/command_duration', CommandDuration, queue_size = 1)
-        self.__joint4_pub = rospy.Publisher('/joint4_controller/command_duration', CommandDuration, queue_size = 1)
-        self.__gripper_pub = rospy.Publisher('/jointr/command', Float64, queue_size = 1)
+        self.__drop_pub = rospy.Publisher('/object/drop', Bool, queue_size = 10)
+        self.__joint1_pub = rospy.Publisher('/joint1_controller/command_duration', CommandDuration, queue_size = 10)
+        self.__joint2_pub = rospy.Publisher('/joint2_controller/command_duration', CommandDuration, queue_size = 10)
+        self.__joint3_pub = rospy.Publisher('/joint3_controller/command_duration', CommandDuration, queue_size = 10)
+        self.__joint4_pub = rospy.Publisher('/joint4_controller/command_duration', CommandDuration, queue_size = 10)
+        self.__gripper_pub = rospy.Publisher('/r_joint_controller/command_duration', CommandDuration, queue_size = 10)
 
     # Callback function for the coordinates of the object
     def __coordsCallback(self, msg:Point) -> None:
@@ -38,38 +47,68 @@ class armMovement:
 
     # Callback function for the states of the joints
     def __statesCallback(self, msg:JointState) -> None:
-        self.__jointsPosition = msg.position[:-1] # Get the position of all joints
+        self.__jointsPosition = msg.position # Get the position of all joints
 
+    # Callback function for the grabbing variable state
     def __grabCallback(self, msg:Bool) -> None:
-        self.__grab = msg.data
+        self.__grab = msg.data # Get the current state
 
     # Publish the joints commands
     def jointsPublish(self, joints:list) -> None:
         # Get the time (ms) for the servos to move
-        t1, t2, t3, t4 = np.abs(np.array(self.__jointsPosition) - np.array(joints)) / self.__vel * 1000.0
+        t1, t2, t3, t4 = self.__adjustTime(np.abs(np.array(self.__jointsPosition[:-1]) - np.array(joints)) / self.__vel * 1000.0)
         self.__joint1_pub.publish(joints[0], t1) # Publish the joint 1 data
         self.__joint2_pub.publish(joints[1], t2) # Publish the joint 2 data
         self.__joint3_pub.publish(joints[2], t3) # Publish the joint 3 data
         self.__joint4_pub.publish(joints[3], t4) # Publish the joint 4 data
-        if self.__grab is True:
-            rospy.sleep(max(t1, t2, t3, t4) / 1000.0) # Wait for the servos to move
-            self.__gripper_pub.publish(-4*np.pi/15) # Publish the gripper data
-            rospy.sleep(1.5) # Wait for the gripper to close
-            self.__grab = None
-            self._start() # Move the arm to a start position
-        elif self.__grab is False:
-            self.__gripper_pub.publish(0.0) # Publish the gripper data
+        if self.__grab is not None:
+            gripperCommand = self.__close if self.__grab is True else self.__open
+            self.gripperPublish(gripperCommand, (t1, t2, t3, t4)) # Publish the gripper data
+            self._afterGrab() if self.__grab is True else None # Move the arm after grabbing an object
+        else:
+            self._dropObject() if self.__dropCoords else None # Drop the object
+
+    # Publish the gripper command
+    def gripperPublish(self, command:float, jointsTime:list) -> None:
+        rospy.sleep(max(jointsTime) / 1000.0) # Wait for the arm joints to move
+        t5 = abs(self.__jointsPosition[-1] - command) / self.__vel * 1000.0 # Get time for moving the gripper
+        self.__gripper_pub.publish(command, t5)
+        rospy.sleep(t5/1000.0) # Wait for the gripper to close
+
+    # Adjust the time for each joint according to grabbing state
+    def __adjustTime(self, time:np.ndarray) -> np.ndarray:
+        time[0] *= 3 if self.__grab is None else 1 # Increase time for moving the first joint
+        time[1] *= 3 if self.__grab is True else 1 # Increase time for moving the second joint
+        time[3] *= 2 if self.__grab is True else 1 # Increase time for moving the fourth joint
+        return time
+
+    # Function to move the arm after grabbing an object
+    def _afterGrab(self) -> None:
+        print("Grabbing the object")
+        self.__grab = None
+        joints = self.__jointsManager._grabPosition() # Get the joints angles
+        self.jointsPublish(joints)
+
+    # Function to move the arm to a drop position
+    def _dropObject(self) -> None:
+        print("Dropping the object")
+        index = random.randint(0, len(self.__dropCoords)-1) # Select a random drop position from the available
+        self.__grab = False # Open gripper
+        self.__coordsCallback(self.__dropCoords.pop(index)) # Move arm to drop position
+        self.__drop_pub.publish(True) # Publish that the object has been dropped
+        self._start() # Return arm to start position
 
     # Function to set a start position
     def _start(self) -> None:
         print("The Arm Movement node is Running")
-        joints = self.__jointsManager._startArm()
+        joints = self.__jointsManager._startArm() # Get the joints angles
         self.jointsPublish(joints)
 
     # Reset the arm position when the node is shutdown
     def _stop(self) -> None:
         print("Stopping the Arm Movement node")
-        joints = self.__jointsManager._resetArm()
+        self.__grab = False
+        joints = self.__jointsManager._resetArm() # Get the joints angles
         self.jointsPublish(joints)
 
 if __name__ == '__main__':

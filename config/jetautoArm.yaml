@@ -1,5 +1,5 @@
 rateArm: 500
-vel: 0.4
+vel: 0.6
 links:
   link1:
     name: link_1
@@ -9,10 +9,10 @@ links:
     lenght: 0.13
   link3:
     name: link_3
-    lenght: 0.13
+    lenght: 0.14
   link4:
     name: link_4
-    lenght: 0.05
+    lenght: 0.06
   link5:
     name: gripper
     length: 0.08

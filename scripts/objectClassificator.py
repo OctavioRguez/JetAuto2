@@ -15,13 +15,15 @@ class objectClassificator:
         # Initialize the variables
         self.__img = None
         self.__object = None # Desired Class name of the object
-        self.__objWidth, self.__objHeight = 0.065, 0.12 # Object dimensions (m)
+        self.__objWidth, self.__objHeight = 0.06, 0.12 # Object dimensions (m)
 
-        self.__armCoords = {"x":0.22, "y":0.0, "z":self.__objHeight/2} # Current end effector coordinates of the arm (m)
+        self.__armCoords = {"x":0.22, "y":0.0, "z":self.__objHeight/2 - 0.03} # Current end effector coordinates of the arm (m)
         self.__lastY = 0.0 # Last y coordinate of the object (m)
-        self.__tolerance = 0 # Tolerance for capturing the object movement (iterations)
+        self.__tolerance = 10 # Tolerance for capturing the object movement (iterations)
         self.__errorTolerance = 0.01 # Tolerance for the error (m)
         self.__grab = False # Flag for check if the object is grabbed
+
+        self.__kp = 0.7 # Proportional constant for the arm movement
 
         # Compressed image message
         self.__compressedImg = CompressedImage()
@@ -30,6 +32,7 @@ class objectClassificator:
         # Initialize the subscribers and publishers
         rospy.Subscriber("/usb_cam/image_raw/compressed", CompressedImage, self.__imageCallback) # Get the image from the camera
         rospy.Subscriber("/object/class", String, self.__classCallback) # Get the class of the object
+        rospy.Subscriber("/object/drop", Bool, self.__dropCallback) # Get the drop flag
         self.__coord_pub = rospy.Publisher("/object/coords", Point, queue_size = 1) # Publish the coordinates of the object (m)
         self.__grab_pub = rospy.Publisher("/object/grab", Bool, queue_size = 1) # Publish if the object is ready to be grabbed
         self.__detection_pub = rospy.Publisher("/usb_cam/model_prediction/compressed", CompressedImage, queue_size = 10) # Publish the image with the prediction
@@ -41,39 +44,46 @@ class objectClassificator:
     # Callback function for the class name
     def __classCallback(self, msg:String) -> None:
         self.__object = msg.data
-        self.__grab = False
+ 
+    def __dropCallback(self, msg:Bool) -> None:
+        self.__grab = False if msg.data else self.__grab
 
     # Start the model classification
     def _startModel(self) -> None:
         if self.__img is not None and not self.__grab:
             # Detect on current frame
             decodedImg = self.__model._startDetection(self.__img, self.__object, self.__objWidth)
-            x, y = self.__model.getDepth(), self.__model.getHorizontal() # Get the coordinates of the object
+            y, depth = self.__model.getHorizontal(), self.__model.getDepth() # Get the coordinates of the object
 
-            if (y is not None):
-                # Update the tolerance
-                self.__tolerance += 1 if (-1e-3 < (self.__lastY - y) < 1e-3 or self.__tolerance < 1) else -1
-                self.__lastY = y
+            # Move the arm
+            self.__moveArm(y, depth) if y is not None else None
 
-                # Check if the object has not moved for "n" iterations
-                if (self.__tolerance > 4):
-                    # Check if the y coordinate is close to zero (middle of the image)
-                    if not(-self.__errorTolerance < y < self.__errorTolerance):
-                        self.__armCoords["y"] += y
-                        self.__tolerance = 0
-                        self.__coord_pub.publish(self.__armCoords["x"], self.__armCoords["y"], self.__armCoords["z"])
-                    # Check if the x coordinate is close enough to grab the object
-                    elif False: # (x < 0.16)
-                        self.__grab = True
-                        self.__tolerance = 0
-                        self.__grab_pub.publish(self.__grab)
-                        self.__coord_pub.publish(self.__armCoords["x"]+(x-0.08), self.__armCoords["y"], self.__armCoords["z"])
-                rospy.loginfo(x)
-                rospy.loginfo(y)
-            # Save the image
-            self.__compressedImg.data = decodedImg
             # Publish the compressed image
+            self.__compressedImg.data = decodedImg
             self.__detection_pub.publish(self.__compressedImg)
+
+    def __moveArm(self, y:float, depth:float) -> None:
+        # Tolerance is increased if the object has not moved
+        self.__tolerance += 1 if (-1e-3 < (self.__lastY - y) < 1e-3 or not self.__tolerance) else -1
+        self.__lastY = y
+
+        # Check if the object has not moved for "n" iterations
+        if (self.__tolerance > 3):
+            # Check if the y coordinate is close to zero (middle of the image)
+            if not(-self.__errorTolerance < y < self.__errorTolerance):
+                self.__armCoords["y"] += y*self.__kp
+                self.__tolerance = 0
+                self.__coord_pub.publish(self.__armCoords["x"], self.__armCoords["y"], self.__armCoords["z"])
+            # Check if the x coordinate is close enough to grab the object
+            else:
+                x = (depth**2 - self.__armCoords["z"]**2)**0.5
+                rospy.loginfo(x)
+                if False: #x < 0.17:
+                    self.__grab, self.__object = True, None
+                    self.__tolerance = 0
+                    self.__grab_pub.publish(True)
+                    # rospy.sleep(1.0)
+                    self.__coord_pub.publish(self.__armCoords["x"]+(x-0.08), self.__armCoords["y"], self.__armCoords["z"]+0.03)
 
     # Stop Condition
     def _stop(self) -> None:
