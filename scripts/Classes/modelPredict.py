@@ -77,7 +77,7 @@ class modelPredict:
                     # Append the results to the lists
                     class_ids.append(class_id)
                     scores.append(max_score)
-                    boxes.append(np.array([int(left), int(top), int(width), int(height)]))
+                    boxes.append(np.array([left, top, width, height]))
 
         # Apply non-maximum suppression to suppress overlapping boxes
         indices = cv.dnn.NMSBoxes(boxes, scores, self.__conf, 0.5)
@@ -106,7 +106,7 @@ class modelPredict:
             # Get the detected object with the highest score
             index = np.argmax(scores)
             # Decompress the bounding box coordinates
-            x, y, w, h = boxes[index]
+            x, y, w, h = tuple(map(int, boxes[index]))
             color = self.__colors[class_ids[index]]
             # Draw the bounding box for the object
             cv.rectangle(img, (x, y), (x + w, y + h), color, 2)

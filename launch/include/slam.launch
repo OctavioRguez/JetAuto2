@@ -1,13 +1,13 @@
 <?xml version="1.0" ?>
 <launch>
     <!-- Parameters file -->
-    <rosparam file="$(find JetAuto2)/config/jetautoObstacles.yaml" />
+    <rosparam file="$(find jet_auto2)/config/jetautoObstacles.yaml" />
     <!-- Parameter for the Tf -->
     <param name="robot_description" command="$(find xacro)/xacro '$(find jetauto_description)/urdf/jetauto.urdf.xacro'
         odom_frame:=odom
         base_frame:=base_link
         depth_camera_name:=depth_camera
-        lidar_view:=false"/>
+        lidar_view:=true"/>
 
     <!-- Lidar Launch -->
     <include file="$(find jetauto_peripherals)/launch/lidar.launch"></include>
@@ -20,8 +20,5 @@
 
     <!-- Tf and Odometry Nodes -->
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
-    <node name="init_pose" pkg="jetauto_slam" type="init_pose.py" output="screen" />
-
-    <!-- Nodes -->
-    <!-- <node name="ObstacleAvoidance" pkg="JetAuto2" type="lidarAvoidance.py" output='screen' /> -->
+    <!-- <node name="init_pose" pkg="jetauto_slam" type="init_pose.py" output="screen" /> -->
 </launch>

@@ -4,7 +4,10 @@ import numpy as np
 from std_msgs.msg import Bool
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import JointState
+import sys
+sys.path.append("/home/tavo/Ciberfisicos_ws/src/jet_auto2/scripts")
 from hiwonder_servo_msgs.msg import CommandDuration
+
 from Classes.robotArm import robotArm
 
 # Class to move the arm
@@ -19,18 +22,22 @@ class armMovement:
 
         # Flag to grab the object
         self.__grab = False
+        self.__drop = False
         # Gripper close position
-        self.__close = 0.0
+        self.__close = np.pi/4
         # Gripper open position
-        self.__open = 4.5*np.pi/9
+        self.__open = 2*np.pi/3
         # Joints coords for dropping an object
         self.__dropCoords = Point(0.0, -0.2, 0.1)
+
+        # Wait for the joint states topic
+        rospy.wait_for_message("/joint_states", JointState, 10)
 
         # Initialize the subscribers and publishers
         rospy.Subscriber("/object/coords", Point, self.__coordsCallback)
         rospy.Subscriber("/object/grab", Bool, self.__grabCallback)
+        rospy.Subscriber("/object/drop", Bool, self.__dropCallback)
         rospy.Subscriber('/joint_states', JointState, self.__statesCallback)
-        self.__drop_pub = rospy.Publisher('/object/drop', Bool, queue_size = 10)
         self.__joint1_pub = rospy.Publisher('/joint1_controller/command_duration', CommandDuration, queue_size = 10)
         self.__joint2_pub = rospy.Publisher('/joint2_controller/command_duration', CommandDuration, queue_size = 10)
         self.__joint3_pub = rospy.Publisher('/joint3_controller/command_duration', CommandDuration, queue_size = 10)
@@ -44,13 +51,17 @@ class armMovement:
         joints = self.__jointsManager.getJoints() # Get the joint angles
         self.jointsPublish(joints) if joints else None # Publish the joints commands
 
-    # Callback function for the states of the joints
-    def __statesCallback(self, msg:JointState) -> None:
-        self.__jointsPosition = msg.position # Get the position of all joints
-
     # Callback function for the grabbing variable state
     def __grabCallback(self, msg:Bool) -> None:
         self.__grab = msg.data # Get the current state
+    
+    # Callback function for the dropping variable state 
+    def __dropCallback(self, msg:Bool) -> None:
+        self.__drop = msg.data
+
+    # Callback function for the states of the joints
+    def __statesCallback(self, msg:JointState) -> None:
+        self.__jointsPosition = msg.position # Get the position of all joints
 
     # Publish the joints commands
     def jointsPublish(self, joints:list) -> None:
@@ -64,7 +75,7 @@ class armMovement:
             gripperCommand = self.__close if self.__grab is True else self.__open
             self.gripperPublish(gripperCommand, (t1, t2, t3, t4)) # Publish the gripper data
             self._afterGrab() if self.__grab is True else None # Move the arm after grabbing an object
-        else:
+        elif self.__drop:
             rospy.sleep(max(t1, t2, t3, t4) / 1000.0)
             self._dropObject() # Drop the object
 
@@ -94,8 +105,6 @@ class armMovement:
         print("Dropping the object")
         self.__grab = False # Open gripper
         self.__coordsCallback(self.__dropCoords) # Move arm to drop position
-        self.__drop_pub.publish(True) # Publish that the object has been dropped
-        rospy.sleep(0.5)
         self._start() # Return arm to start position
 
     # Function to set a start position
@@ -107,6 +116,7 @@ class armMovement:
     # Reset the arm position when the node is shutdown
     def _stop(self) -> None:
         print("Stopping the Arm Movement node")
+        self._dropObject()
         self.__grab = False
         joints = self.__jointsManager._resetArm() # Get the joints angles
         self.jointsPublish(joints)
@@ -127,8 +137,7 @@ if __name__ == '__main__':
 
     # Create the instance of the class
     roboticArm = armMovement([l1, l2, l3, l4], vel)
-    # Wait for the servos controller to start
-    rospy.sleep(2.0)
+    rospy.sleep(1.0)
     # Move the arm to a start position
     roboticArm._start()
 

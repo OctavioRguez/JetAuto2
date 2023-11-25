@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 import numpy as np
-import random
 
 # Class for managing the robotic arm 
 class robotArm:
@@ -33,7 +32,7 @@ class robotArm:
         for qn in self.__q.keys():
             self.__q[qn] = None
 
-    # Private function for getting the final trajectory
+    # Protected function for getting the final trajectory
     def _trajectory(self, qIni:list, qFin:list, rate:int) -> list:
         if any(q is None for q in qFin):
             return np.array([])
@@ -44,7 +43,7 @@ class robotArm:
         self.__q["q1"] = 0.0
         self.__q["q2"] = -np.pi/4
         self.__q["q3"] = 5*np.pi/8
-        self.__q["q4"] = np.pi/4
+        self.__q["q4"] = np.pi/6
         return list(self.__q.values())
 
     # Protected function for resetting the joints

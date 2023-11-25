@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <launch>
     <!-- SLAM view -->
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find JetAuto2)/rviz/gmappingSlam.rviz"/>
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find jet_auto2)/rviz/gmappingSlam.rviz"/>
 
     <!-- Model prediction image view -->
     <node name="image_view" pkg="rqt_image_view" type="rqt_image_view" args="/usb_cam/model_prediction/compressed"/>

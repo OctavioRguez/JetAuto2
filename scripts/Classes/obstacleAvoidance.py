@@ -9,47 +9,53 @@ class obstacleAvoidance:
         self.__safeDistance = safeDistance
 
         # Max and min linear velocity (m/s)
-        self.__maxLinear, self.__minLinear = 0.15, 0.0
+        self.__maxLinear, self.__minLinear = 0.08, 0.0
         # Max and min angular velocity (rad/s)
-        self.__maxAngular, self.__minAngular = 0.5, 0.0
+        self.__maxAngular, self.__minAngular = 0.2, 0.0
 
         # Linear (x) and angular (z) velocities (m/s, rad/s)
         self.__linear, self.__angular = 0.0, 0.0
 
-    # Private function for avoiding obstacles by changing linear and angular velocities
+    # Protected function for avoiding obstacles by changing linear and angular velocities
     def _avoidObstacles(self, scanData: list) -> None:
         # Minimum distance from obstacles at each direction
-        forwardDist = min(scanData[:144] + scanData[1004:1147])
-        rightDist = min(scanData[41:180])
-        leftDist = min(scanData[540:680])
+        forwardDist = min(scanData[0:144] + scanData[1004:1147])
+        rightDist = min(scanData[861:1004])
+        leftDist = min(scanData[144:287])
         dists = [forwardDist, leftDist, rightDist]
 
+        # Prioritize right rotation
+        if rightDist > 1.3*self.__safeDistance:
+            self.__changeVelocity(self.__maxLinear/2, -self.__maxAngular)
         # Check if there are no obstacles at any direction
-        if all(dist > self.__safeDistance for dist in dists):
+        elif all(dist > self.__safeDistance for dist in dists) or forwardDist > self.__safeDistance:
             self.__changeVelocity(self.__maxLinear, self.__minAngular)
         # Check if there are obstacles in all directions
         elif all(dist < self.__safeDistance for dist in dists):
-            self.__changeVelocity(self.__minLinear, -self.__maxAngular)
+            self.__changeVelocity(self.__minLinear, self.__maxAngular)
         else:
-            if leftDist > rightDist:
-                self.__count1 += 1
-                self.__count2 = 0
-                # Turn is taken after 5 counts, to avoid jerking
-                if self.__count1 >= 5:
-                    self.__changeVelocity(self.__minLinear, self.__maxAngular)
-                    if all(dist > self.__safeDistance for dist in dists):
-                        self.__count1 = 0
-                        self.__changeVelocity(self.__maxLinear, self.__minAngular)
+            self.__rotate(dists, leftDist, rightDist)
 
-            elif leftDist < rightDist :
-                self.__count1 = 0
-                self.__count2 += 1
-                # Turn is taken after 5 counts, to avoid jerking
-                if self.__count2 >= 5:
-                    self.__changeVelocity(self.__minLinear, -self.__maxAngular)
-                    if all(dist > self.__safeDistance for dist in dists):
-                        self.__count2 = 0
-                        self.__changeVelocity(self.__maxLinear, self.__minAngular)
+    # Private function for turning right of left
+    def __rotate(self, dists:list, left:list, right:list) -> None:
+        if left > right:
+            self.__count1 += 1
+            self.__count2 = 0
+            # Turn is taken after 20 counts, to avoid jerking
+            if self.__count1 >= 20:
+                self.__changeVelocity(self.__minLinear, self.__maxAngular)
+                if all(dist > self.__safeDistance for dist in dists):
+                    self.__count1 = 0
+                    self.__changeVelocity(self.__maxLinear, self.__minAngular)
+        elif left < right :
+            self.__count1 = 0
+            self.__count2 += 1
+            # Turn is taken after 20 counts, to avoid jerking
+            if self.__count2 >= 20:
+                self.__changeVelocity(self.__minLinear, -self.__maxAngular)
+                if all(dist > self.__safeDistance for dist in dists):
+                    self.__count2 = 0
+                    self.__changeVelocity(self.__maxLinear, self.__minAngular)
 
     # Private function for changing linear and angular velocities
     def __changeVelocity(self, linear:float, angular:float) -> None:

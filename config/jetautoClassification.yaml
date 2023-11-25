@@ -1,13 +1,13 @@
 rateClass: 30
 model:
   name: model_onnx
-  path: "/home/sr_tavo/Ciberfisicos_ws/src/JetAuto2/Model/bestV5-25e.onnx"
+  path: "/home/tavo/Ciberfisicos_ws/src/jet_auto2/Model/bestV5-25e.onnx"
 classes:
   name: classes_list
   list: ["Fanta", "Pepsi", "Seven"]
 confidence:
   name: conf_threshold
-  value: 0.55
+  value: 0.8
 isCuda:
   name: enable_cuda
-  value: False
+  value: True

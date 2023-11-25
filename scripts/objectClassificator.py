@@ -1,10 +1,10 @@
-#!/home/sr_tavo/venv/bin/python3
+#!/usr/bin/python3
 import rospy
-from std_msgs.msg import String, Bool
+from std_msgs.msg import String, Bool, Float64
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import CompressedImage
-# import sys
-# sys.path.append("/home/tavo/Ciberfisicos_ws/src/JetAuto2/scripts")
+import sys
+sys.path.append("/home/tavo/Ciberfisicos_ws/src/jet_auto2/scripts")
 from Classes.modelPredict import modelPredict
 
 class objectClassificator:
@@ -17,10 +17,10 @@ class objectClassificator:
         self.__object = None # Desired Class name of the object
         self.__objWidth, self.__objHeight = 0.06, 0.12 # Object dimensions (m)
 
-        self.__armCoords = {"x":0.22, "y":0.0, "z":self.__objHeight/2 - 0.035} # Current end effector coordinates of the arm (m)
+        self.__armCoords = {"x":0.22, "y":0.0, "z":0.1} # Current end effector coordinates of the arm (m)
         self.__lastY = 0.0 # Last y coordinate of the object (m)
         self.__tolerance = 10 # Tolerance for capturing the object movement (iterations)
-        self.__errorTolerance = 1e-2 # Tolerance for the error (m)
+        self.__errorTolerance = 1.5e-2 # Tolerance for the error (m)
         self.__grab = False # Flag for check if the object is grabbed
 
         self.__kp = 0.7 # Proportional constant for the arm movement
@@ -35,6 +35,8 @@ class objectClassificator:
         rospy.Subscriber("/object/drop", Bool, self.__dropCallback) # Get the drop flag
         self.__coord_pub = rospy.Publisher("/object/coords", Point, queue_size = 1) # Publish the coordinates of the object (m)
         self.__grab_pub = rospy.Publisher("/object/grab", Bool, queue_size = 1) # Publish if the object is ready to be grabbed
+        self.__depth_pub = rospy.Publisher("/object/depth", Float64, queue_size = 1)
+        self.__horizontal_pub = rospy.Publisher("/object/horizontal", Float64, queue_size = 1)
         self.__detection_pub = rospy.Publisher("/usb_cam/model_prediction/compressed", CompressedImage, queue_size = 10) # Publish the image with the prediction
 
     # Callback funtion for the image
@@ -45,6 +47,7 @@ class objectClassificator:
     def __classCallback(self, msg:String) -> None:
         self.__object = msg.data
  
+    # Callback function for checking the drop state for the object
     def __dropCallback(self, msg:Bool) -> None:
         self.__grab = False if msg.data else self.__grab
         self.__armCoords["y"] = 0.0
@@ -55,6 +58,10 @@ class objectClassificator:
             # Detect on current frame
             decodedImg = self.__model._startDetection(self.__img, self.__object, self.__objWidth)
             y, depth = self.__model.getHorizontal(), self.__model.getDepth() # Get the coordinates of the object
+            if depth:
+                depth = (depth**2 - self.__armCoords["z"]**2)**0.5
+                self.__depth_pub.publish(depth)
+                self.__horizontal_pub.publish(y)
 
             # Move the arm
             self.__moveArm(y, depth) if y is not None else None
@@ -63,6 +70,7 @@ class objectClassificator:
             self.__compressedImg.data = decodedImg
             self.__detection_pub.publish(self.__compressedImg)
 
+    # Private function for calculating the object 3d position for moving the arm
     def __moveArm(self, y:float, depth:float) -> None:
         # Tolerance is increased if the object has not moved
         self.__tolerance += 1 if (-1e-3 < (self.__lastY - y) < 1e-3 or not self.__tolerance) else -1
@@ -72,18 +80,15 @@ class objectClassificator:
         if (self.__tolerance > 3):
             # Check if the y coordinate is close to zero (middle of the image)
             if not(-self.__errorTolerance < y < self.__errorTolerance):
-                self.__armCoords["y"] += y*self.__kp
                 self.__tolerance = 0
                 self.__coord_pub.publish(self.__armCoords["x"], self.__armCoords["y"], self.__armCoords["z"])
             # Check if the x coordinate is close enough to grab the object
-            else:
-                x = (depth**2 - self.__armCoords["z"]**2)**0.5
-                if x < 0.17:
-                    self.__grab, self.__object = True, None
-                    self.__tolerance = 0
-                    self.__grab_pub.publish(True)
-                    rospy.sleep(1.0)
-                    self.__coord_pub.publish(self.__armCoords["x"]+(x-0.08), self.__armCoords["y"], self.__armCoords["z"]+0.025)
+            elif depth < 0.15:
+                self.__grab, self.__object = True, None
+                self.__tolerance = 0
+                self.__grab_pub.publish(True)
+                rospy.sleep(0.1)
+                self.__coord_pub.publish(self.__armCoords["x"]+(depth-0.06), self.__armCoords["y"], self.__objHeight/2)
 
     # Stop Condition
     def _stop(self) -> None:
@@ -97,7 +102,7 @@ if __name__ == '__main__':
     rate = rospy.Rate(rospy.get_param("rateClass", default = 15))
 
     # Get the parameters
-    model = rospy.get_param("model/path", default = "../Model/bestV5-25e.onnx")
+    model = rospy.get_param("model/path", default = "/home/sr_tavo/Ciberfisicos_ws/src/JetAuto2/Model/bestV5-25e.onnx")
     class_list = rospy.get_param("classes/list", default = ["Fanta", "Pepsi", "Seven"])
     conf = rospy.get_param("confidence/value", default = 0.5)
     cuda = rospy.get_param("isCuda/value", default = False)

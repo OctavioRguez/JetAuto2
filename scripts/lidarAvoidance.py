@@ -1,7 +1,11 @@
 #!/usr/bin/python3
 import rospy
-from sensor_msgs.msg import LaserScan
-from geometry_msgs.msg import Twist, Point
+from std_msgs.msg import Float64
+from sensor_msgs.msg import LaserScan, CompressedImage
+from nav_msgs.msg import OccupancyGrid
+from geometry_msgs.msg import Twist
+import sys
+sys.path.append("/home/tavo/Ciberfisicos_ws/src/jet_auto2/scripts")
 from Classes.obstacleAvoidance import obstacleAvoidance
 
 # Avoid obstacles based on LiDAR data
@@ -14,13 +18,21 @@ class lidarAvoidance:
         # Flag to activate the navigation
         self.__navegate = True
 
+        self.__horizontal = 0.0
+        self.__kr = 1.0
+
+        rospy.wait_for_message("/usb_cam/model_prediction/compressed", CompressedImage, 10)
+        rospy.wait_for_message("/map", OccupancyGrid, 10)
+
         # Initialize the subscribers and publishers
         rospy.Subscriber("/scan", LaserScan, self.__scanCallback)
-        rospy.Subscriber("/object/coords", Point, self.__coordsCallback)
-        self.__vel_pub = rospy.Publisher("/jetauto_controller/cmd_vel", Twist, queue_size = 10)
+        rospy.Subscriber("/object/depth", Float64, self.__depthCallback)
+        rospy.Subscriber("/object/horizontal", Float64, self.__horizontalCallback)
+        self.__vel_pub = rospy.Publisher("/jetauto_controller/cmd_vel", Twist, queue_size = 1)
 
+    # Callback function for getting the lidar data
     def __scanCallback(self, data:LaserScan) -> None:
-        if self.__navegate:
+        if self.__navegate is True:
             # Check for obstacles
             self.__obstacleManager._avoidObstacles(data.ranges)
             # Get linear and angular velocities
@@ -28,15 +40,24 @@ class lidarAvoidance:
             self.__velocity.angular.z = self.__obstacleManager.getAngular()
             self.__vel_pub.publish(self.__velocity) # Publish the velocity
 
-    def __coordsCallback(self, data:Point) -> None:
-        vel = 0.0 if data.x>0.22 else 0.03
-        self.__obstacleManager.changeLinearVelocity(vel, vel)
-        self.__obstacleManager.changeAngularVelocity(0.0, 0.0)
+    def __horizontalCallback(self, msg:Float64) -> None:
+        self.__horizontal = msg.data
 
+    # Callback function for the object coordinates
+    def __depthCallback(self, msg:Float64) -> None:
+        # Control
+        lin = 0.0 if (msg.data < 0.145) else 0.035 if (msg.data < 0.23) else 0.07
+        ang = -self.__horizontal*self.__kr
+
+        # Publish the velocity
+        self.__navegate = False
+        self.__velocity.linear.x, self.__velocity.angular.z = lin, ang
+        self.__vel_pub.publish(self.__velocity)
+
+    # Stop function
     def _stop(self) -> None:
-        # Stop the robot
         print("Stopping the obstacle avoidance")
-        self.__velocity.linear.x, self.__velocity.angular.z = 0.0, 0.0
+        self.__velocity.linear.x, self.__velocity.angular.z = 0.0, 0.0 # Stop the robot
         self.__vel_pub.publish(self.__velocity) # Publish the velocity
  
 if __name__ == '__main__':
@@ -47,7 +68,7 @@ if __name__ == '__main__':
     rate = rospy.Rate(rospy.get_param("rateObst", default = 15))
 
     # Get parameters
-    safeDist = rospy.get_param("safe_distance", default = 0.5)
+    safeDist = rospy.get_param("safe_distance", default = 0.25)
 
     # Create the instance of the class
     avoider = lidarAvoidance(safeDist)

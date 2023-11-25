@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>JetAuto2</name>
+  <name>jet_auto2</name>
   <version>0.0.0</version>
   <description>The JetAuto2 package is used for enable multiple functionalities, like Object Detection and Classification, Inverse Kinematics, etc</description>
 

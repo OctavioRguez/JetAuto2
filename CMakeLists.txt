@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(JetAuto2)
+project(jet_auto2)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -9,7 +9,7 @@ project(JetAuto2)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   rospy
-  cv_bridge
+  hiwonder_servo_msgs
   geometry_msgs
   sensor_msgs
   std_msgs
