@@ -167,7 +167,7 @@ catkin_install_python(PROGRAMS
   scripts/armTrajectory.py
   scripts/objectClassificator.py
   scripts/lidarAvoidance.py
-  scripts/depth.py
+  scripts/pathPlanning.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

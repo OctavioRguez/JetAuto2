@@ -18,9 +18,12 @@ class lidarAvoidance:
         # Flag to activate the navigation
         self.__navegate = True
 
+        # Horizontal coordinate of the object
         self.__horizontal = 0.0
-        self.__kr = 1.0
+        # Control constants
+        self.__kp = 1.0
 
+        # Wait for all the other nodes to be active
         rospy.wait_for_message("/usb_cam/model_prediction/compressed", CompressedImage, 10)
         rospy.wait_for_message("/map", OccupancyGrid, 10)
 
@@ -40,6 +43,7 @@ class lidarAvoidance:
             self.__velocity.angular.z = self.__obstacleManager.getAngular()
             self.__vel_pub.publish(self.__velocity) # Publish the velocity
 
+    # Callback function for the object horizontal coordinate
     def __horizontalCallback(self, msg:Float64) -> None:
         self.__horizontal = msg.data
 
@@ -47,7 +51,7 @@ class lidarAvoidance:
     def __depthCallback(self, msg:Float64) -> None:
         # Control
         lin = 0.0 if (msg.data < 0.145) else 0.035 if (msg.data < 0.23) else 0.07
-        ang = -self.__horizontal*self.__kr
+        ang = -self.__horizontal*self.__kp
 
         # Publish the velocity
         self.__navegate = False

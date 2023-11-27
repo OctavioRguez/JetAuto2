@@ -1,15 +1,16 @@
 <?xml version="1.0" ?>
 <launch>
     <!-- SLAM Package-->
-    <node pkg="gmapping" type="slam_gmapping" name="gmapping" output='screen'>
+    <!-- <node pkg="gmapping" type="slam_gmapping" name="gmapping">
         <param name="base_frame"              value="base_link" />
         <param name="odom_frame"              value="odom" />
         <param name="map_frame"               value="map" />
         <rosparam command="load"              file="$(find jet_auto2)/config/jetautoGmapping.yaml" />
-    </node>
+    </node> -->
 
     <!-- Nodes -->
-    <node name="ArmMovement" pkg="jet_auto2" type="armMovement.py" output='screen'/>
+    <!-- <node name="ArmMovement" pkg="jet_auto2" type="armMovement.py" output='screen'/>
     <node name="Classificator" pkg="jet_auto2" type="objectClassificator.py" output='screen'/>
-    <node name="ObstacleAvoidance" pkg="jet_auto2" type="lidarAvoidance.py" output='screen' />
+    <node name="ObstacleAvoidance" pkg="jet_auto2" type="lidarAvoidance.py" output='screen' /> -->
+    <node name="PathPlanning" pkg="jet_auto2" type="pathPlanning.py" output='screen'/>
 </launch>

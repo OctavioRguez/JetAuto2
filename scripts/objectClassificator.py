@@ -23,8 +23,6 @@ class objectClassificator:
         self.__errorTolerance = 1.5e-2 # Tolerance for the error (m)
         self.__grab = False # Flag for check if the object is grabbed
 
-        self.__kp = 0.7 # Proportional constant for the arm movement
-
         # Compressed image message
         self.__compressedImg = CompressedImage()
         self.__compressedImg.format = "jpeg"
@@ -35,8 +33,8 @@ class objectClassificator:
         rospy.Subscriber("/object/drop", Bool, self.__dropCallback) # Get the drop flag
         self.__coord_pub = rospy.Publisher("/object/coords", Point, queue_size = 1) # Publish the coordinates of the object (m)
         self.__grab_pub = rospy.Publisher("/object/grab", Bool, queue_size = 1) # Publish if the object is ready to be grabbed
-        self.__depth_pub = rospy.Publisher("/object/depth", Float64, queue_size = 1)
-        self.__horizontal_pub = rospy.Publisher("/object/horizontal", Float64, queue_size = 1)
+        self.__depth_pub = rospy.Publisher("/object/depth", Float64, queue_size = 1) # Publish the depth of the object (m)
+        self.__horizontal_pub = rospy.Publisher("/object/horizontal", Float64, queue_size = 1) # Publish the horizontal coordinate of the object (m)
         self.__detection_pub = rospy.Publisher("/usb_cam/model_prediction/compressed", CompressedImage, queue_size = 10) # Publish the image with the prediction
 
     # Callback funtion for the image
@@ -58,8 +56,9 @@ class objectClassificator:
             # Detect on current frame
             decodedImg = self.__model._startDetection(self.__img, self.__object, self.__objWidth)
             y, depth = self.__model.getHorizontal(), self.__model.getDepth() # Get the coordinates of the object
+            # Publish if depth is not None
             if depth:
-                depth = (depth**2 - self.__armCoords["z"]**2)**0.5
+                depth = (depth**2 - self.__armCoords["z"]**2)**0.5 # Pythagoras theorem
                 self.__depth_pub.publish(depth)
                 self.__horizontal_pub.publish(y)
 

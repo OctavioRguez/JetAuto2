@@ -30,9 +30,6 @@ class armMovement:
         # Joints coords for dropping an object
         self.__dropCoords = Point(0.0, -0.2, 0.1)
 
-        # Wait for the joint states topic
-        rospy.wait_for_message("/joint_states", JointState, 10)
-
         # Initialize the subscribers and publishers
         rospy.Subscriber("/object/coords", Point, self.__coordsCallback)
         rospy.Subscriber("/object/grab", Bool, self.__grabCallback)

@@ -4,22 +4,21 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 class PRMAstar:
-    def __init__(self) -> None:
+    def __init__(self, samples:int, maxDist:float, density:int) -> None:
         # Map parameters
-        self.__samples = 350 # Number of points for PRM
-        self.__maxDistance = 2.4 # Max distance between two points
-        self.__num = 1000 # Points density for line collision check
-        self.__x_limits = [0, 10] # Map x limits
-        self.__y_limits = [0, 10] # Map y limits
+        self.__samples = samples # Number of points for PRM
+        self.__maxDistance = maxDist # Max distance between two points
+        self.__num = density # Points density for line collision check
+
+        self.__xLimits = None # Map x limits
+        self.__yLimits = None # Map y limits
 
         # Start and goal points
-        self.__startPoint = (2, 8)
-        self.__goalPoint = (5, 5)
+        self.__startPoint = None
+        self.__goalPoint = (0, 0)
 
-        # Create obstacle map
-        self.__obstacle_map = np.zeros((11, 11))
-        self.__obstacle_map[3:8, 4] = 1  # Vertical obstacle
-        self.__obstacle_map[8, 5:8] = 1  # Horizontal obstacle
+        # Obstacle map
+        self.__map = None
 
     # Private function to calculate distance between two points
     def __dist(self, p1:list, p2:list) -> float:
@@ -27,16 +26,24 @@ class PRMAstar:
 
     # Check if point is inside an obstacle
     def __insideObstacle(self, point:tuple) -> bool:
-        x, y = point
-        return self.__obstacle_map[int(y), int(x)] == 1
+        return any(self.__map[int(y), int(x)] == 1 for x, y in self.__neighborhood(point))
+ 
+    # Create kernel of points around current point
+    def __neighborhood(self, point:tuple) -> list:
+        kernel = []
+        for i in range(-1, 2):
+            for j in range(-1, 2):
+                x, y = point[0]+i, point[1]+j
+                if (self.__xLimits[0] <= x <= self.__xLimits[1] and self.__yLimits[0] <= y <= self.__yLimits[1]):
+                    kernel.append((x, y))
+        return kernel
 
     # Generate random points avoiding obstacles in map
     def __generatePoints(self) -> list:
-        limits = [self.__x_limits, self.__y_limits]
         points = []
         while len(points) < self.__samples:
-            sample = (np.random.randint(limits[0][0], limits[0][1]), 
-                         np.random.randint(limits[1][0], limits[1][1]))
+            sample = (np.random.uniform(self.__xLimits[0], self.__xLimits[1]), 
+                      np.random.uniform(self.__yLimits[0], self.__yLimits[1]))
             if not self.__insideObstacle(sample):
                 points.append(sample)
         return points
@@ -47,17 +54,23 @@ class PRMAstar:
         for point in points:
             graph.add_node(point)
             for neighbor in points:
-                if point != neighbor and not self.__insideObstacle(point) and not self.__insideObstacle(neighbor):
+                if point != neighbor:
                     dist = self.__dist(point, neighbor)
                     if dist < self.__maxDistance:
                         # Check if line between points crosses an obstacle
                         interpolation = np.linspace(point, neighbor, self.__num)
-                        if all([not self.__insideObstacle(tuple(map(int, linePoint))) for linePoint in interpolation]):
-                            graph.add_edge(point, neighbor, weight = dist)
+                        if any(self.__insideObstacle(linePoint) == True for linePoint in interpolation):
+                            continue
+                        graph.add_edge(point, neighbor, weight = dist)
         return graph
 
     # Public function to calculate PRM and A* path
-    def calculate(self) -> None:
+    def calculate(self, map:np.ndarray, limits:list, start:tuple) -> list:
+        self.__map = map
+        self.__xLimits = limits[0]
+        self.__yLimits = limits[1]
+        self.__startPoint = start
+    
         # Generate random samples avoiding obstacles in map
         points = self.__generatePoints()
         graph = self.__PRM(points)
@@ -68,28 +81,30 @@ class PRMAstar:
 
         # Find the path using A*
         path = nx.astar_path(graph, start, goal, heuristic = self.__dist)
-        self.plot(graph, path, start, goal)
+        self.__plot(graph, path, start, goal)
+        return path
 
     # Public function to plot PRM and A* path
-    def plot(self, graph:nx.Graph, path:list, start:list, goal:list) -> None:
+    def __plot(self, graph:nx.Graph, path:list, start:list, goal:list) -> None:
         # Main figure
-        plt.figure(figsize=(8, 8))
+        plt.figure()
 
         # Plot map
-        plt.imshow(self.__obstacle_map, cmap='Greys', origin='lower', 
-                   extent=[self.__x_limits[0], self.__x_limits[1], self.__y_limits[0], self.__y_limits[1]])
+        plt.imshow(self.__map, cmap='Greys', origin='lower')
         plt.title('Map with PRM and A* path')
         plt.xlabel('X Axis')
         plt.ylabel('Y Axis')
 
         # Plot PRM graph
         for edge in graph.edges():
-            plt.plot([edge[0][0], edge[1][0]], [edge[0][1], edge[1][1]], color='blue', alpha=0.5)
+            plt.plot([edge[0][0], edge[1][0]], [edge[0][1], edge[1][1]], color='blue')
 
         # Plot A* path
         x, y = zip(*path)
         plt.plot(x, y, color='red', linewidth=2, label='A* Path')
-        plt.scatter(start[0], start[1], color = 'green', s = 100, label = 'Start')
-        plt.scatter(goal[0], goal[1], color = 'purple', s = 100, label = 'Goal')
+        plt.scatter(start[0], start[1], color = 'green', s = 200, label = 'Start')
+        plt.scatter(goal[0], goal[1], color = 'purple', s = 200, label = 'Goal')
         plt.legend()
         plt.show()
+        # plt.savefig('/home/sr_tavo/PRM.png')
+        # print("Saving PRM.png")
