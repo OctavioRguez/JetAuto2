@@ -15,7 +15,7 @@ class PRMAstar:
 
         # Start and goal points
         self.__startPoint = None
-        self.__goalPoint = (0, 0)
+        self.__goalPoint = (40, 40)
 
         # Obstacle map
         self.__map = None
@@ -26,13 +26,13 @@ class PRMAstar:
 
     # Check if point is inside an obstacle
     def __insideObstacle(self, point:tuple) -> bool:
-        return any(self.__map[int(y), int(x)] == 1 for x, y in self.__neighborhood(point))
+        return any(self.__map[int(y), int(x)] == 100 for x, y in self.__neighborhood(point))
  
     # Create kernel of points around current point
     def __neighborhood(self, point:tuple) -> list:
         kernel = []
-        for i in range(-1, 2):
-            for j in range(-1, 2):
+        for i in range(-3, 4):
+            for j in range(-3, 4):
                 x, y = point[0]+i, point[1]+j
                 if (self.__xLimits[0] <= x <= self.__xLimits[1] and self.__yLimits[0] <= y <= self.__yLimits[1]):
                     kernel.append((x, y))
@@ -44,7 +44,7 @@ class PRMAstar:
         while len(points) < self.__samples:
             sample = (np.random.uniform(self.__xLimits[0], self.__xLimits[1]), 
                       np.random.uniform(self.__yLimits[0], self.__yLimits[1]))
-            if not self.__insideObstacle(sample):
+            if not self.__insideObstacle(sample) and self.__map[int(sample[1]), int(sample[0])] != -1:
                 points.append(sample)
         return points
 
@@ -87,7 +87,7 @@ class PRMAstar:
     # Public function to plot PRM and A* path
     def __plot(self, graph:nx.Graph, path:list, start:list, goal:list) -> None:
         # Main figure
-        plt.figure()
+        plt.figure(figsize=(10, 10))
 
         # Plot map
         plt.imshow(self.__map, cmap='Greys', origin='lower')
@@ -105,6 +105,5 @@ class PRMAstar:
         plt.scatter(start[0], start[1], color = 'green', s = 200, label = 'Start')
         plt.scatter(goal[0], goal[1], color = 'purple', s = 200, label = 'Goal')
         plt.legend()
-        plt.show()
-        # plt.savefig('/home/sr_tavo/PRM.png')
-        # print("Saving PRM.png")
+        plt.savefig('/home/tavo/PRM.png')
+        print("Saving PRM.png")

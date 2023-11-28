@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import rospy
-from std_msgs.msg import Float64
+from std_msgs.msg import Float64, Bool
 from sensor_msgs.msg import LaserScan, CompressedImage
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Twist
@@ -24,14 +24,15 @@ class lidarAvoidance:
         self.__kp = 1.0
 
         # Wait for all the other nodes to be active
-        rospy.wait_for_message("/usb_cam/model_prediction/compressed", CompressedImage, 10)
-        rospy.wait_for_message("/map", OccupancyGrid, 10)
+        # rospy.wait_for_message("/usb_cam/model_prediction/compressed", CompressedImage, 10)
+        rospy.wait_for_message("/map", OccupancyGrid, 20)
 
         # Initialize the subscribers and publishers
+        self.__vel_pub = rospy.Publisher("/jetauto_controller/cmd_vel", Twist, queue_size = 10)
         rospy.Subscriber("/scan", LaserScan, self.__scanCallback)
         rospy.Subscriber("/object/depth", Float64, self.__depthCallback)
         rospy.Subscriber("/object/horizontal", Float64, self.__horizontalCallback)
-        self.__vel_pub = rospy.Publisher("/jetauto_controller/cmd_vel", Twist, queue_size = 1)
+        rospy.Subscriber("/initiate", Bool, self.__initCallback)
 
     # Callback function for getting the lidar data
     def __scanCallback(self, data:LaserScan) -> None:
@@ -58,6 +59,10 @@ class lidarAvoidance:
         self.__velocity.linear.x, self.__velocity.angular.z = lin, ang
         self.__vel_pub.publish(self.__velocity)
 
+    def __initCallback(self, msg:Bool) -> None:
+        if msg.data is True:
+            self.__navegate = False
+
     # Stop function
     def _stop(self) -> None:
         print("Stopping the obstacle avoidance")
@@ -72,7 +77,7 @@ if __name__ == '__main__':
     rate = rospy.Rate(rospy.get_param("rateObst", default = 15))
 
     # Get parameters
-    safeDist = rospy.get_param("safe_distance", default = 0.25)
+    safeDist = rospy.get_param("safe_distance/value", default = 0.25)
 
     # Create the instance of the class
     avoider = lidarAvoidance(safeDist)

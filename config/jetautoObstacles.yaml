@@ -5,10 +5,10 @@ safe_distance:
 planning:
   samples: 
     description: number of points in PRM
-    value: 1000
+    value: 500
   maxDistance:
     description: max distance between points in PRM
-    value: 10.0
+    value: 5.0
   pointsDensity:
     description: points density for interpolation in PRM
     value: 50
