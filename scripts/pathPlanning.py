@@ -19,33 +19,34 @@ class pathPlanning:
         self.__mapData = None
         # Position estimated with odometry
         self.__pose = None
+        self.__angle = None
+        self.__next = False
 
         # Create the control manager
-        self.__controlManager = DifferentialDriveRobot(0.1, 0.1, 0.1, 0.1)
+        self.__controlManager = DifferentialDriveRobot(0.25, 0.3, 0.08, 0.3, 0.08)
         self.__velocity = Twist()
         self.__path = np.array([])
         
         # Initialize the subscribers and publishers
         rospy.Subscriber("/map", OccupancyGrid, self.__mapCallback)
         rospy.Subscriber("/odom", Odometry, self.__odomCallback)
-        rospy.Subscriber("/initiate", Bool, self.__initCallback)
-        self.__vel_pub = rospy.Publisher("/jetauto_controller/cmd_vel", Twist, queue_size=10)
+        rospy.Subscriber("/return", Bool, self.__returnCallback)
+        self.__vel_pub = rospy.Publisher("/jetauto_controller/cmd_vel", Twist, queue_size = 10)
+        self.__drop_pub = rospy.Publisher("/object/drop", Bool, queue_size = 1)
 
     # Callback function for getting the lidar data
     def __mapCallback(self, msg:OccupancyGrid) -> None:
         self.__mapData = np.array(msg.data).reshape((msg.info.height, msg.info.width))
-        # Plot map
-        plt.figure()
-        plt.imshow(self.__mapData, cmap='Greys', origin='lower')
-        plt.savefig("/home/tavo/map.png")
 
     # Callback function for getting the current odometry position
     def __odomCallback(self, msg:Odometry) -> None:
         self.__pose = msg.pose.pose.position
-        rospy.loginfo(self.__pose)
+        ang = msg.pose.pose.orientation.z
+        self.__angle = ang*np.pi if ang > 0 else msg.pose.pose.orientation.w*np.pi - np.pi
+        # rospy.loginfo(self.__pose)
 
     # Callback function for getting the flag for starting the path planning
-    def __initCallback(self, msg:Bool) -> None:
+    def __returnCallback(self, msg:Bool) -> None:
         if msg.data is True:
             self.__planning()
 
@@ -53,17 +54,27 @@ class pathPlanning:
     def __planning(self) -> None:
         if self.__mapData is not None and self.__pose is not None:
             w, h = self.__mapData.shape
-            x, y = self.__pose.x*40+40, self.__pose.y*40+40
+            x, y =( self.__pose.x+1)*40, (self.__pose.y+1)*40
             self.__path = self.__planningManager.calculate(self.__mapData, [[0, w], [0, h]], (x, y))
             self.__path = np.array(self.__path) / 40 - 1
 
+    # Control function
     def control(self) -> None:
         if self.__path.size > 0:
-            pos, self.__path = self.__path[0], self.__path[1:]
-            self.__controlManager.follow(pos, (self.__pose.x, self.__pose.y), 0.0)
+            currGoal = self.__path[0]
+            self.__next = self.__controlManager.follow(currGoal, (self.__pose.x, self.__pose.y), self.__angle)
+            self.__path = self.__path[1:] if self.__next else self.__path
+
+            # Publish the velocity
             self.__velocity.linear.x = self.__controlManager.getLinearVel()
             self.__velocity.angular.z = self.__controlManager.getAngularVel()
             self.__vel_pub.publish(self.__velocity)
+        elif self.__next:
+            rospy.sleep(1.5)
+            self.__velocity.linear.x, self.__velocity.angular.z = 0.0, 0.0
+            self.__vel_pub.publish(self.__velocity)
+            self.__drop_pub.publish(True)
+            self.__next = False
 
     # Stop function
     def _stop(self) -> None:

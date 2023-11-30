@@ -1,14 +1,14 @@
-rateObst: 30
+rateObst: 100
 safe_distance:
   description: safe distance to obstacles (m)
   value: 0.3
 planning:
   samples: 
     description: number of points in PRM
-    value: 500
+    value: 450
   maxDistance:
     description: max distance between points in PRM
-    value: 5.0
+    value: 15.0
   pointsDensity:
     description: points density for interpolation in PRM
     value: 50

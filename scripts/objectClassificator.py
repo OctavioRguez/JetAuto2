@@ -87,7 +87,7 @@ class objectClassificator:
                 self.__tolerance = 0
                 self.__grab_pub.publish(True)
                 rospy.sleep(0.1)
-                self.__coord_pub.publish(self.__armCoords["x"]+(depth-0.06), self.__armCoords["y"], self.__objHeight/2)
+                self.__coord_pub.publish(self.__armCoords["x"]+(depth-0.055), self.__armCoords["y"], self.__objHeight/2)
 
     # Stop Condition
     def _stop(self) -> None:

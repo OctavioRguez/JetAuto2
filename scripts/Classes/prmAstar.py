@@ -31,8 +31,8 @@ class PRMAstar:
     # Create kernel of points around current point
     def __neighborhood(self, point:tuple) -> list:
         kernel = []
-        for i in range(-3, 4):
-            for j in range(-3, 4):
+        for i in range(-5, 6):
+            for j in range(-5, 6):
                 x, y = point[0]+i, point[1]+j
                 if (self.__xLimits[0] <= x <= self.__xLimits[1] and self.__yLimits[0] <= y <= self.__yLimits[1]):
                     kernel.append((x, y))
@@ -87,7 +87,7 @@ class PRMAstar:
     # Public function to plot PRM and A* path
     def __plot(self, graph:nx.Graph, path:list, start:list, goal:list) -> None:
         # Main figure
-        plt.figure(figsize=(10, 10))
+        plt.figure()
 
         # Plot map
         plt.imshow(self.__map, cmap='Greys', origin='lower')
@@ -96,8 +96,8 @@ class PRMAstar:
         plt.ylabel('Y Axis')
 
         # Plot PRM graph
-        for edge in graph.edges():
-            plt.plot([edge[0][0], edge[1][0]], [edge[0][1], edge[1][1]], color='blue')
+        # for edge in graph.edges():
+        #     plt.plot([edge[0][0], edge[1][0]], [edge[0][1], edge[1][1]], color='blue')
 
         # Plot A* path
         x, y = zip(*path)

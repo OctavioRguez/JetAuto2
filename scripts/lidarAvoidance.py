@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 import rospy
-from std_msgs.msg import Float64, Bool
-from sensor_msgs.msg import LaserScan, CompressedImage
+import numpy as np
+from std_msgs.msg import Float64
+from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Twist
 import sys
@@ -21,7 +22,8 @@ class lidarAvoidance:
         # Horizontal coordinate of the object
         self.__horizontal = 0.0
         # Control constants
-        self.__kp = 1.0
+        self.__kp = 1.1
+        self.__wmax = 0.35
 
         # Wait for all the other nodes to be active
         # rospy.wait_for_message("/usb_cam/model_prediction/compressed", CompressedImage, 10)
@@ -32,7 +34,6 @@ class lidarAvoidance:
         rospy.Subscriber("/scan", LaserScan, self.__scanCallback)
         rospy.Subscriber("/object/depth", Float64, self.__depthCallback)
         rospy.Subscriber("/object/horizontal", Float64, self.__horizontalCallback)
-        rospy.Subscriber("/initiate", Bool, self.__initCallback)
 
     # Callback function for getting the lidar data
     def __scanCallback(self, data:LaserScan) -> None:
@@ -51,17 +52,13 @@ class lidarAvoidance:
     # Callback function for the object coordinates
     def __depthCallback(self, msg:Float64) -> None:
         # Control
-        lin = 0.0 if (msg.data < 0.145) else 0.035 if (msg.data < 0.23) else 0.07
-        ang = -self.__horizontal*self.__kp
+        lin = 0.0 if (msg.data < 0.15) else 0.035 if (msg.data < 0.23) else 0.07
+        ang = self.__wmax*np.tanh(-self.__horizontal*self.__kp/self.__wmax)
 
         # Publish the velocity
         self.__navegate = False
         self.__velocity.linear.x, self.__velocity.angular.z = lin, ang
         self.__vel_pub.publish(self.__velocity)
-
-    def __initCallback(self, msg:Bool) -> None:
-        if msg.data is True:
-            self.__navegate = False
 
     # Stop function
     def _stop(self) -> None:

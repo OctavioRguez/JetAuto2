@@ -22,7 +22,6 @@ class armMovement:
 
         # Flag to grab the object
         self.__grab = False
-        self.__drop = False
         # Gripper close position
         self.__close = np.pi/4
         # Gripper open position
@@ -40,6 +39,7 @@ class armMovement:
         self.__joint3_pub = rospy.Publisher('/joint3_controller/command_duration', CommandDuration, queue_size = 10)
         self.__joint4_pub = rospy.Publisher('/joint4_controller/command_duration', CommandDuration, queue_size = 10)
         self.__gripper_pub = rospy.Publisher('/r_joint_controller/command_duration', CommandDuration, queue_size = 10)
+        self.__return_pub = rospy.Publisher('/return', Bool, queue_size = 1)
 
     # Callback function for the coordinates of the object
     def __coordsCallback(self, msg:Point) -> None:
@@ -54,7 +54,8 @@ class armMovement:
     
     # Callback function for the dropping variable state 
     def __dropCallback(self, msg:Bool) -> None:
-        self.__drop = msg.data
+        if msg.data is True:
+            self._dropObject()
 
     # Callback function for the states of the joints
     def __statesCallback(self, msg:JointState) -> None:
@@ -71,10 +72,9 @@ class armMovement:
         if self.__grab is not None:
             gripperCommand = self.__close if self.__grab is True else self.__open
             self.gripperPublish(gripperCommand, (t1, t2, t3, t4)) # Publish the gripper data
-            self._afterGrab() if self.__grab is True else None # Move the arm after grabbing an object
-        elif self.__drop:
-            rospy.sleep(max(t1, t2, t3, t4) / 1000.0)
-            self._dropObject() # Drop the object
+            self._afterGrab() if self.__grab == True else None # Move the arm after grabbing an object
+        else:
+            self.__return_pub.publish(True) # Publish the return flag
 
     # Publish the gripper command
     def gripperPublish(self, command:float, jointsTime:list) -> None:
@@ -113,7 +113,7 @@ class armMovement:
     # Reset the arm position when the node is shutdown
     def _stop(self) -> None:
         print("Stopping the Arm Movement node")
-        self._dropObject()
+        # self._dropObject()
         self.__grab = False
         joints = self.__jointsManager._resetArm() # Get the joints angles
         self.jointsPublish(joints)

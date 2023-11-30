@@ -25,7 +25,7 @@ class obstacleAvoidance:
         dists = [forwardDist, leftDist, rightDist]
 
         # Prioritize right rotation
-        if rightDist > 1.3*self.__safeDistance:
+        if rightDist > 1.2*self.__safeDistance:
             self.__changeVelocity(self.__maxLinear/2, -self.__maxAngular)
         # Check if there are no obstacles at any direction
         elif all(dist > self.__safeDistance for dist in dists) or forwardDist > self.__safeDistance:

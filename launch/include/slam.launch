@@ -20,5 +20,5 @@
 
     <!-- Tf and Odometry Nodes -->
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
-    <!-- <node name="init_pose" pkg="jetauto_slam" type="init_pose.py" output="screen" /> -->
+    <node name="init_pose" pkg="jetauto_slam" type="init_pose.py" output="screen" />
 </launch>
