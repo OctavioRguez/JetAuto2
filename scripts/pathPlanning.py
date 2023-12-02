@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 import rospy
+import numpy as np
 from std_msgs.msg import Bool
 from nav_msgs.msg import OccupancyGrid, Odometry
 from geometry_msgs.msg import Twist
-import matplotlib.pyplot as plt
-import numpy as np
+from tf.transformations import euler_from_quaternion
 import sys
 sys.path.append("/home/tavo/Ciberfisicos_ws/src/jet_auto2/scripts")
 from Classes.prmAstar import PRMAstar
@@ -17,18 +17,25 @@ class pathPlanning:
         self.__planningManager = PRMAstar(points, dist, density)
         # Map with obstacles from the SLAM
         self.__mapData = None
-        # Position estimated with odometry
+        # Position and angle estimated with odometry
         self.__pose = None
         self.__angle = None
-        self.__next = False
 
         # Create the control manager
-        self.__controlManager = DifferentialDriveRobot(0.25, 0.3, 0.08, 0.3, 0.08)
+        self.__controlManager = DifferentialDriveRobot(0.3, 0.2, 0.07, 1.2)
         self.__velocity = Twist()
+        # Control constants
+        self.__kpr = 0.6
+        self.__wmax = 0.3
+        self.__angThreshold = np.pi/20
+
+        # Path variables
         self.__path = np.array([])
+        self.__next = False # Flag to move to the next point
+        self.__return = False # Flag to activate the planning
         
         # Initialize the subscribers and publishers
-        rospy.Subscriber("/map", OccupancyGrid, self.__mapCallback)
+        rospy.Subscriber("/map", OccupancyGrid, self.__mapCallback, queue_size = 1)
         rospy.Subscriber("/odom", Odometry, self.__odomCallback)
         rospy.Subscriber("/return", Bool, self.__returnCallback)
         self.__vel_pub = rospy.Publisher("/jetauto_controller/cmd_vel", Twist, queue_size = 10)
@@ -41,40 +48,52 @@ class pathPlanning:
     # Callback function for getting the current odometry position
     def __odomCallback(self, msg:Odometry) -> None:
         self.__pose = msg.pose.pose.position
-        ang = msg.pose.pose.orientation.z
-        self.__angle = ang*np.pi if ang > 0 else msg.pose.pose.orientation.w*np.pi - np.pi
-        # rospy.loginfo(self.__pose)
+        ang = msg.pose.pose.orientation
+        self.__angle = euler_from_quaternion([ang.x, ang.y, ang.z, ang.w])[2]
 
     # Callback function for getting the flag for starting the path planning
     def __returnCallback(self, msg:Bool) -> None:
-        if msg.data is True:
-            self.__planning()
-
-    # Start function
-    def __planning(self) -> None:
-        if self.__mapData is not None and self.__pose is not None:
+        if msg.data:
+            # Calculate the PRM
             w, h = self.__mapData.shape
-            x, y =( self.__pose.x+1)*40, (self.__pose.y+1)*40
-            self.__path = self.__planningManager.calculate(self.__mapData, [[0, w], [0, h]], (x, y))
-            self.__path = np.array(self.__path) / 40 - 1
+            self.__planningManager.calculate(self.__mapData, [(0, h), (0, w)])
+
+            # Find the path
+            x, y = (self.__pose.x+1)*40, (self.__pose.y+1)*40
+            self.__path = self.__planningManager.findPath((x, y))
+            self.__path = [(x/40-1, y/40-1) for x, y in self.__path] # Convert the path to the real coordinates
 
     # Control function
     def control(self) -> None:
-        if self.__path.size > 0:
-            currGoal = self.__path[0]
-            self.__next = self.__controlManager.follow(currGoal, (self.__pose.x, self.__pose.y), self.__angle)
-            self.__path = self.__path[1:] if self.__next else self.__path
+        if len(self.__path) > 0:
+            self.__return = True # Activate the planning
+            # Angular control
+            thetae = self.__angle
+            angVel = self.__wmax*np.tanh(-self.__kpr * thetae/self.__wmax)
+            print(self.__angle)
 
-            # Publish the velocity
-            self.__velocity.linear.x = self.__controlManager.getLinearVel()
-            self.__velocity.angular.z = self.__controlManager.getAngularVel()
-            self.__vel_pub.publish(self.__velocity)
-        elif self.__next:
-            rospy.sleep(1.5)
-            self.__velocity.linear.x, self.__velocity.angular.z = 0.0, 0.0
-            self.__vel_pub.publish(self.__velocity)
-            self.__drop_pub.publish(True)
-            self.__next = False
+            # Start omnidirectional control
+            if abs(thetae) < self.__angThreshold:
+                currGoal = self.__path[0]
+                # Check if the robot has reached the current goal
+                self.__next = self.__controlManager.follow(currGoal, (self.__pose.x, self.__pose.y))
+                self.__path = self.__path[1:] if self.__next else self.__path
+
+                # Publish the velocity
+                self.velocityPublish(self.__controlManager.getXVel(), self.__controlManager.getYVel(), angVel)
+            else:
+                self.velocityPublish(0.0, 0.0, angVel)
+        elif self.__return: # Finish the path
+            rospy.sleep(1.0)
+            self.velocityPublish(0.0, 0.0, 0.0) # Stop the robot
+            self.__return = False # Deactivate the planning
+            self.__drop_pub.publish(True) # Drop the object
+    
+    # Public function for publishing the velocity
+    def velocityPublish(self, x:float, y:float, z:float) -> None:
+        self.__velocity.linear.x, self.__velocity.linear.y = x, y
+        self.__velocity.angular.z = z
+        self.__vel_pub.publish(self.__velocity)
 
     # Stop function
     def _stop(self) -> None:

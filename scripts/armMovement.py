@@ -25,7 +25,7 @@ class armMovement:
         # Gripper close position
         self.__close = np.pi/4
         # Gripper open position
-        self.__open = 2*np.pi/3
+        self.__open = np.pi
         # Joints coords for dropping an object
         self.__dropCoords = Point(0.0, -0.2, 0.1)
 
@@ -70,7 +70,7 @@ class armMovement:
         self.__joint3_pub.publish(joints[2], t3) # Publish the joint 3 data
         self.__joint4_pub.publish(joints[3], t4) # Publish the joint 4 data
         if self.__grab is not None:
-            gripperCommand = self.__close if self.__grab is True else self.__open
+            gripperCommand = self.__close if self.__grab == True else self.__open
             self.gripperPublish(gripperCommand, (t1, t2, t3, t4)) # Publish the gripper data
             self._afterGrab() if self.__grab == True else None # Move the arm after grabbing an object
         else:
@@ -103,6 +103,7 @@ class armMovement:
         self.__grab = False # Open gripper
         self.__coordsCallback(self.__dropCoords) # Move arm to drop position
         self._start() # Return arm to start position
+        self.__return_pub.publish(False) # Publish the return flag
 
     # Function to set a start position
     def _start(self) -> None:
@@ -113,7 +114,6 @@ class armMovement:
     # Reset the arm position when the node is shutdown
     def _stop(self) -> None:
         print("Stopping the Arm Movement node")
-        # self._dropObject()
         self.__grab = False
         joints = self.__jointsManager._resetArm() # Get the joints angles
         self.jointsPublish(joints)

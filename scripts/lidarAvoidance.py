@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import rospy
 import numpy as np
-from std_msgs.msg import Float64
+from std_msgs.msg import Float64, Bool
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Twist
@@ -32,6 +32,7 @@ class lidarAvoidance:
         # Initialize the subscribers and publishers
         self.__vel_pub = rospy.Publisher("/jetauto_controller/cmd_vel", Twist, queue_size = 10)
         rospy.Subscriber("/scan", LaserScan, self.__scanCallback)
+        rospy.Subscriber("/return", Bool, self.__returnCallback)
         rospy.Subscriber("/object/depth", Float64, self.__depthCallback)
         rospy.Subscriber("/object/horizontal", Float64, self.__horizontalCallback)
 
@@ -59,6 +60,11 @@ class lidarAvoidance:
         self.__navegate = False
         self.__velocity.linear.x, self.__velocity.angular.z = lin, ang
         self.__vel_pub.publish(self.__velocity)
+
+    # Callback function for the return state
+    def __returnCallback(self, msg:Bool) -> None:
+        if not msg.data:
+            self.__navegate = True # Activate the navigation
 
     # Stop function
     def _stop(self) -> None:

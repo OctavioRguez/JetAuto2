@@ -8,9 +8,9 @@ sys.path.append("/home/tavo/Ciberfisicos_ws/src/jet_auto2/scripts")
 from Classes.modelPredict import modelPredict
 
 class objectClassificator:
-    def __init__(self, model:str, classes:list, conf_threshold:float, cuda:bool) -> None:
+    def __init__(self, model:str, weigths:str, classes:list, conf_threshold:float, device:bool) -> None:
         # Instance of the class modelPredict
-        self.__model = modelPredict(model, classes, conf_threshold, cuda)
+        self.__model = modelPredict(model, weigths, classes, conf_threshold, device)
 
         # Initialize the variables
         self.__img = None
@@ -48,6 +48,7 @@ class objectClassificator:
     # Callback function for checking the drop state for the object
     def __dropCallback(self, msg:Bool) -> None:
         self.__grab = False if msg.data else self.__grab
+        self.__tolerance = 10
         self.__armCoords["y"] = 0.0
 
     # Start the model classification
@@ -87,7 +88,7 @@ class objectClassificator:
                 self.__tolerance = 0
                 self.__grab_pub.publish(True)
                 rospy.sleep(0.1)
-                self.__coord_pub.publish(self.__armCoords["x"]+(depth-0.055), self.__armCoords["y"], self.__objHeight/2)
+                self.__coord_pub.publish(self.__armCoords["x"]+(depth-0.06), self.__armCoords["y"], self.__objHeight/2)
 
     # Stop Condition
     def _stop(self) -> None:
@@ -101,13 +102,14 @@ if __name__ == '__main__':
     rate = rospy.Rate(rospy.get_param("rateClass", default = 15))
 
     # Get the parameters
-    model = rospy.get_param("model/path", default = "/home/sr_tavo/Ciberfisicos_ws/src/JetAuto2/Model/bestV5-25e.onnx")
-    class_list = rospy.get_param("classes/list", default = ["Fanta", "Pepsi", "Seven"])
+    model = rospy.get_param("model/path", default = "")
+    weigths = rospy.get_param("weights/path", default = "")
+    class_list = rospy.get_param("classes/list", default = [])
     conf = rospy.get_param("confidence/value", default = 0.5)
-    cuda = rospy.get_param("isCuda/value", default = False)
+    dev = rospy.get_param("device/value", default = "CPU")
 
     # Create the instance of the class
-    classificator = objectClassificator(model, class_list, conf, cuda)
+    classificator = objectClassificator(model, weigths, class_list, conf, dev)
 
     # Shutdown hook
     rospy.on_shutdown(classificator._stop)

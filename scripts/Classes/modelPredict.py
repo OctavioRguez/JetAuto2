@@ -1,17 +1,16 @@
 #!/usr/bin/python3
 import cv2 as cv
 import numpy as np
-import onnxruntime as ort
+from openvino.inference_engine import IECore
 
 # Classificator class
 class modelPredict:
-    def __init__(self, model:str, class_list:list, conf_thres:float, cuda:bool) -> None:
+    def __init__(self, model:str, weights:str, class_list:list, conf_thres:float, device:bool) -> None:
         #Initialize attributes
-        self.__model = model
         self.__class_list = class_list
         self.__colors = np.random.uniform(0, 255, size=(len(self.__class_list), 3))
         self.__conf = conf_thres
-        self.__buildModel(cuda) # Build the model for inference
+        self.__buildModel(model, weights, device) # Build the model for inference
 
         # Depth of the object from the camera (m)
         self.__depth = None
@@ -20,17 +19,15 @@ class modelPredict:
         # Focal distance of the camera (pixels)
         self.__focalLength = 514
 
-    # Define if opencv runs with CUDA or CPU (False = CPU, True = CUDA)
-    def __buildModel(self, is_cuda:bool) -> None:
-        if is_cuda:
-            print("Attempting to use CUDA")
-            self.__session = ort.InferenceSession(self.__model, providers = ['CUDAExecutionProvider'])
-        else:
-            print("Running on CPU")
-            self.__session = ort.InferenceSession(self.__model, providers = ['CPUExecutionProvider'])
+    # Define if model runs on CPU or CUDA (dev)
+    def __buildModel(self, model_xml:str, model_bin:str, dev:str) -> None:
+        plugin = IECore()
+        net = plugin.read_network(model=model_xml, weights=model_bin)
+        self.__net = plugin.load_network(network=net, device_name=dev, num_requests=2)
+        print("Red cargada en: " + str(dev))
         # Get the input image shape for the model (width, height)
-        shape = self.__session.get_inputs()[0].shape
-        self.__inputWidth, self.__inputHeight = shape[2:4]
+        input_info = net.input_info
+        self.__inputWidth, self.__inputHeight = input_info['images'].input_data.shape[2:4]
 
     # Format image to be used by the model
     def __formatImg(self, img:cv.Mat) -> np.ndarray:
@@ -41,9 +38,10 @@ class modelPredict:
 
     # Detect objects and get the raw output from the model
     def __detect(self, img:cv.Mat) -> np.ndarray:
-        inputs = {self.__session.get_inputs()[0].name: img} # Prepare the input for the model
-        preds = self.__session.run(None, inputs) # Perform inference
-        return np.squeeze(preds[0]) # Remove batch dimension
+        input_blob = next(iter(self.__net.input_info))
+        #Ejecutar inferencia
+        preds = self.__net.infer(inputs = {input_blob: img})
+        return np.squeeze(preds["output0"])
 
     # Wrap the detection processing
     def __wrapDetection(self, modelOutput:np.ndarray, object:str) -> tuple:
