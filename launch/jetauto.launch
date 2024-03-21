@@ -1,10 +1,11 @@
 <?xml version="1.0" ?>
 <launch>
+    <!-- Classification Launch -->
+    <include file="$(find jet_auto2)/launch/include/modelClassification.launch"></include>
 
-    <include file="~/jetauto_ws/src/jetauto_driver/hiwonder_servo/hiwonder_servo_controllers/launch/start.launch"/>
+    <!-- Robotic Arm Launch -->
+    <include file="$(find jet_auto2)/launch/include/roboticArm.launch"></include>
 
-    <!-- <node name="Camera" pkg="JetAuto2" type="camera.py"/> -->
-    <!-- <node name="Classificator" pkg="JetAuto2" type="imageClassificator.py"/> -->
-    <node name="Controller" pkg="JetAuto2" type="armMovement.py"/>
-
+    <!-- SLAM Launch -->
+    <include file="$(find jet_auto2)/launch/include/slam.launch"></include>
 </launch>

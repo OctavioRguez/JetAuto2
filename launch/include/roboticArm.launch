@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<launch>
+    <!-- Parameters file -->
+    <rosparam file="$(find jet_auto2)/config/jetautoArm.yaml"/>
+
+    <!-- Servo Controller Launch -->
+    <include file="$(find hiwonder_servo_controllers)/launch/start.launch"></include>
+</launch>

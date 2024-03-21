@@ -1,0 +1,6 @@
+<?xml version="1.0" ?>
+<launch>
+    <!-- Nodes -->
+    <node name="Classificator" pkg="jet_auto2" type="objectClassificator.py" output='screen'/>
+    <node name="PathPlanning" pkg="jet_auto2" type="pathPlanning.py" output='screen'/>
+</launch>

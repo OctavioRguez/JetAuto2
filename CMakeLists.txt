@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(JetAuto2)
+project(jet_auto2)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -8,11 +8,12 @@ project(JetAuto2)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  cv_bridge
-  geometry_msgs
   rospy
+  hiwonder_servo_msgs
+  geometry_msgs
   sensor_msgs
   std_msgs
+  nav_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -22,7 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
+catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -162,9 +163,11 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
-  scripts/Nodes/armMovement.py
-  scripts/Nodes/cameraImage.py
-  scripts/Nodes/objectClassificator.py
+  scripts/armMovement.py
+  scripts/armTrajectory.py
+  scripts/objectClassificator.py
+  scripts/lidarAvoidance.py
+  scripts/pathPlanning.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

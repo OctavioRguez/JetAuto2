@@ -1,0 +1,16 @@
+rateClass: 30
+model:
+  name: model_openvino
+  path: "/home/tavo/Ciberfisicos_ws/src/jet_auto2/Model/bestV5-25e.xml"
+weigths:
+  name: weights_openvino
+  path: "/home/tavo/Ciberfisicos_ws/src/jet_auto2/Model/bestV5-25e.bin"
+classes:
+  name: classes_list
+  list: ["Fanta", "Pepsi", "Seven"]
+confidence:
+  name: conf_threshold
+  value: 0.8
+device:
+  name: device
+  value: "CPU"
