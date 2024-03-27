@@ -92,7 +92,15 @@ roslaunch jet_auto2 slam.launch
 - Finally, to run the whole project, you can use the following command (This will start all the launchs provided by the package):     
 ```bash
 roslaunch jet_auto2 jetauto.launch
-```   
+```
+
+## Project Demo
+
+### Gripper
+https://github.com/OctavioRguez/JetAuto2/assets/115122414/557f0e1d-cc0a-461e-9bf8-333b8e641d55
+
+### Navigation
+https://github.com/OctavioRguez/JetAuto2/assets/115122414/00d4776b-157d-4363-a6c5-2be318a598ba
 
 ## License
 
