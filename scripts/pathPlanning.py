@@ -8,7 +8,7 @@ from tf.transformations import euler_from_quaternion
 import sys
 sys.path.append("/home/tavo/Ciberfisicos_ws/src/jet_auto2/scripts")
 from Classes.prmAstar import PRMAstar
-from Classes.controlTraj import DifferentialDriveRobot
+from Classes.controlTraj import OmnidirectionalDriveRobot
 
 # Avoid obstacles based on LiDAR data
 class pathPlanning:
@@ -22,7 +22,7 @@ class pathPlanning:
         self.__angle = None
 
         # Create the control manager
-        self.__controlManager = DifferentialDriveRobot(0.3, 0.2, 0.07, 1.2)
+        self.__controlManager = OmnidirectionalDriveRobot(0.3, 0.2, 0.07, 1.2)
         self.__velocity = Twist()
         # Control constants
         self.__kpr = 0.6

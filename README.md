@@ -6,10 +6,10 @@ JetAuto2 is a ROS (Robot Operating System) project for controlling the Hiwonder 
 
 The project is structured as follows:
 
-- `config/`: Contains yaml files with parameters for the nodes.
-- `launch/`: Contains launch files for starting the project.
-- `Model/`: Contains the yolov5 model for detection and classification.
-- `scripts/`: Contains scripts for running the project.
+- [`config/`](config/): Contains yaml files with parameters for the nodes.
+- [`launch/`](launch/): Contains launch files for starting the project.
+- [`Model/`](Model/): Contains the yolov5 model for detection and classification.
+- [`scripts/`](scripts/): Contains scripts for running the project.
 
 ## Dependencies
 
@@ -41,23 +41,27 @@ The following messages are used in the project:
 
 The provided configuration files are the following:
 
-- `jetautoArm.yaml`: Contains all the modificable paramters for using the robotic Arm nodes (movement and trajectory).
-- `jetautoClassification.yaml`: Contains the parameters for infering with the ONNX model.
-- `jetautoObstacles.yaml`: Contains the parameters for performing SLAM and avoiding obstacles with the LiDAR.
+- [`jetautoArm.yaml`](config/jetautoArm.yaml): Contains all the modificable paramters for using the robotic Arm nodes (movement and trajectory).
+- [`jetautoClassification.yaml`](config/jetautoClassification.yaml): Contains the parameters for infering with the ONNX model.
+- [`jetautoGmapping.yaml`](config/jetautoGmapping.yaml): Contains the parameters for performing SLAM.
+- [`jetautoObstacles.yaml`](config/jetautoObstacles.yaml): Contains the parameters for avoiding obstacles with the LiDAR.
 
 ## Scripts
 
 The following ROS nodes are included in the project:
 
-- `armMovement.py`: A Python script for controlling the robotic arm movement.
-- `armTrajectory.py`: A Python script for controlling the robotic arm by interpolating a trajectory.
-- `lidarAvoidance.py`: A Python script for using the LiDAR data and control the vehicle velocity to avoid obstacles.
-- `objectClassificator.py`: A Python script for subscribing to a camera image and classifying objects.
+- [`armMovement.py`](scripts/armMovement.py): A Python script for controlling the robotic arm movement.
+- [`armTrajectory.py`](scripts/armTrajectory.py): A Python script for controlling the robotic arm by interpolating a trajectory.
+- [`lidarAvoidance.py`](scripts/lidarAvoidance.py): A Python script for using the LiDAR data and control the vehicle velocity to avoid obstacles.
+- [`objectClassificator.py`](scripts/objectClassificator.py): A Python script that subscribes to a camera image and classifies objects.
+- [`pathPlanning.py`](scripts/pathPlanning.py): A Python script that subscribes to a map, generate a path and apply velocity control to follow the path.
 
-The `Classes/` folder contains the following Python classes that are used and imported in the ROS nodes:
-- `modelPredict.py`: A Python script defining the ModelPredict class with the input preprocessing and output postprocessing for the model inferences.
-- `obstacleAvoidance.py`: A Python script defining the obstacleAvoidance class with the LiDAR data processing and algorithm for controlling the vehicle velocity.
-- `robotArm.py`: A Python script defining the robotArm class with the IK solution and other functionalities.
+The [`Classes/`](scripts/Classes/) folder contains the following Python classes that are used and imported in the ROS nodes:
+- [`controlTraj.py`](scripts/Classes/controlTraj.py): A Python script that defines a class for an omnidirectional control of velocity.
+- [`modelPredict.py`](scripts/Classes/modelPredict.py): A Python script defining the ModelPredict class with the input preprocessing and output postprocessing for the model inferences.
+- [`obstacleAvoidance.py`](scripts/Classes/obstacleAvoidance.py): A Python script defining the obstacleAvoidance class with the LiDAR data processing and algorithm for controlling the vehicle velocity.
+- [`prmAstar.py`](scripts/Classes/prmAstar.py): A Python script defining the PRMAstar class for performing the PRM and A* algorithm for finding the optimum path.
+- [`robotArm.py`](scripts/Classes/robotArm.py): A Python script defining the robotArm class with the IK solution and other functionalities.
 
 ## Build
 

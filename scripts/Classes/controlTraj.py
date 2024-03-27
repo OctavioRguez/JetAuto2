@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import numpy as np
 
-class DifferentialDriveRobot:
+class OmnidirectionalDriveRobot:
     def __init__(self, kpt:float, vmax:float, allowErr:float, bias:float) -> None:
         # Constants
         self.__kpt = kpt
