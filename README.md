@@ -11,7 +11,9 @@ The project is structured as follows:
 - `Model/`: Contains the yolov5 model for detection and classification.
 - `scripts/`: Contains scripts for running the project.
 
-## Languages & Libraries Used
+## Dependencies
+
+### Languages & Libraries Used
 
 The project is primarily written in Python. The following Python libraries are used by the scripts:
 
@@ -21,7 +23,7 @@ The project is primarily written in Python. The following Python libraries are u
 - `onnxruntime`: A Python library for infering with an ONNX model using either CPU or GPU.
 - `rospy`: A Python library for ROS.
 
-## Messages
+### Messages
 ROS uses a message-passing architecture, so the project also uses default message definitions.
 The following messages are used in the project:
 
@@ -35,7 +37,7 @@ The following messages are used in the project:
 - `std_msgs/String`: A message type for publishing object classification results.
 - `std_msgs/Float64`: A message type for publishing the angle commands to the Robotic Arm joints.
 
-## Config
+## Configuration files
 
 The provided configuration files are the following:
 
@@ -57,21 +59,41 @@ The `Classes/` folder contains the following Python classes that are used and im
 - `obstacleAvoidance.py`: A Python script defining the obstacleAvoidance class with the LiDAR data processing and algorithm for controlling the vehicle velocity.
 - `robotArm.py`: A Python script defining the robotArm class with the IK solution and other functionalities.
 
-## Launch
+## Build
 
-To run the roboticArm controller, you can use the command:  
-`roslaunch JetAuto2 roboticArm.launch`
+### Installation
 
-To run the detection and classification model, you can use the command:     
-`roslaunch JetAuto2 modelClassification.launch`
+To install this package, clone the repository into your catkin workspace and build it using catkin.
+```bash
+cd ~/catkin_ws/src
+git clone https://github.com/OctavioRguez/JetAuto2.git
+mv ./JetAuto2 ./jet_auto2
+cd ..
+catkin_make
+```
 
-To run the SLAM mapping and obstacle avoidance, you can use the command:     
-`roslaunch JetAuto2 slam.launch`
+### Launch
 
-Finally, to run the whole project, you can use the following command:     
-`roslaunch JetAuto2 jetauto.launch`   
-(This will start all the launchs provided by the package)
+- To run the roboticArm controller, you can use the command:  
+```bash
+roslaunch jet_auto2 roboticArm.launch
+```
+
+- To run the detection and classification model, you can use the command:     
+```bash
+roslaunch jet_auto2 modelClassification.launch
+```
+
+- To run the SLAM mapping and obstacle avoidance, you can use the command:     
+```bash
+roslaunch jet_auto2 slam.launch
+```
+
+- Finally, to run the whole project, you can use the following command (This will start all the launchs provided by the package):     
+```bash
+roslaunch jet_auto2 jetauto.launch
+```   
 
 ## License
 
-This project is licensed under the BSD 3-Clause License. See the LICENSE file for details.
+This project is licensed under the BSD 3-Clause License. See the [LICENSE](LICENSE) file for details.
